@@ -6,3 +6,5 @@ docs/research
 playwright-report
 test-results
 .superpowers
+
+.cache

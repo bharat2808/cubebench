@@ -1,0 +1,171 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "versions": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "string"
+            },
+            "engine": {
+              "type": "string"
+            },
+            "notation": {
+              "type": "string"
+            },
+            "generator": {
+              "type": "string"
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string"
+            }
+          },
+          "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+          "additionalProperties": false
+        },
+        "leagues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "enum": ["sprint", "live"]
+              },
+              "instructions": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "instructions"],
+            "additionalProperties": false
+          }
+        },
+        "notation": {
+          "type": "string"
+        },
+        "sizes": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "maximum_size": {
+          "type": "number"
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "time_ms": {
+              "default": 300000,
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 3600000
+            },
+            "moves": {
+              "default": 1000,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            },
+            "tool_calls": {
+              "default": 200,
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 2000
+            }
+          },
+          "required": ["time_ms", "moves", "tool_calls"],
+          "additionalProperties": false
+        },
+        "scoring": {
+          "type": "string"
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "solved",
+              "unsolved_submission",
+              "invalid_notation",
+              "illegal_move_for_cube_size",
+              "malformed_tool_arguments",
+              "move_limit_exceeded",
+              "tool_call_limit_exceeded",
+              "timeout",
+              "abandoned",
+              "disconnected",
+              "unauthorized",
+              "internal_server_error"
+            ]
+          }
+        },
+        "fairness": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ok",
+        "versions",
+        "leagues",
+        "notation",
+        "sizes",
+        "maximum_size",
+        "limits",
+        "scoring",
+        "failures",
+        "fairness"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": false
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "solved",
+                "unsolved_submission",
+                "invalid_notation",
+                "illegal_move_for_cube_size",
+                "malformed_tool_arguments",
+                "move_limit_exceeded",
+                "tool_call_limit_exceeded",
+                "timeout",
+                "abandoned",
+                "disconnected",
+                "unauthorized",
+                "internal_server_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["category", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["ok", "error"],
+      "additionalProperties": false
+    }
+  ]
+}

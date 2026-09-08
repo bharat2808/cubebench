@@ -10,3 +10,4 @@ coverage/
 .superpowers/
 
 .cache/
+docs/schemas/cubebench_start_run.input.json

@@ -25,7 +25,14 @@ import {
   type CubeState,
 } from '../../cube-core/src/index';
 import type { MatchView, CubeEvent, ResultRecord, RunView } from '../../shared-contracts/src/index';
-import { Cube } from './Cube';
+const CubeView = React.lazy(() => import('./Cube').then((module) => ({ default: module.Cube })));
+function Cube(props: React.ComponentProps<typeof import('./Cube').Cube>) {
+  return (
+    <React.Suspense fallback={<div className="cube-canvas empty">Loading cube…</div>}>
+      <CubeView {...props} />
+    </React.Suspense>
+  );
+}
 import './style.css';
 const sizes = [2, 3, 4, 5, 6, 7];
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -116,7 +123,7 @@ function App() {
           <span className="logo">
             <Box size={23} />
           </span>
-          CubeBench<span className="beta">BETA</span>
+          CubeBench
         </a>
         <div className="nav-caption">WORKSPACE</div>
         <nav>
@@ -351,6 +358,10 @@ function Human() {
   const [custom, setCustom] = useState('');
   const [moveInput, setMoveInput] = useState('');
   const [scramble, setScramble] = useState('');
+  const [preview, setPreview] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState(0);
+  const previewInitial = useMemo(() => createSolved(size), [size]);
+  const previewMoves = useMemo(() => parseMoves(scramble, size), [scramble, size]);
   const [currentSeed, setCurrentSeed] = useState<string | null>(null);
   const [initial, setInitial] = useState(() => createSolved(3));
   const [sequence, setSequence] = useState<string[]>([]);
@@ -367,7 +378,7 @@ function Human() {
   const state = useMemo(() => applyMoves(initial, moves), [initial, moves]);
   const solved = sequence.length > 0 && isSolved(state);
   useEffect(() => {
-    if (!started || paused || solved) return;
+    if (!started || paused || solved || preview) return;
     let prev = performance.now();
     const timer = setInterval(() => {
       const now = performance.now();
@@ -375,9 +386,10 @@ function Human() {
       prev = now;
     }, 40);
     return () => clearInterval(timer);
-  }, [started, paused, solved]);
+  }, [started, paused, solved, preview]);
   const turn = (notation: string) => {
     if (paused) return;
+    setPreview(false);
     setStarted(true);
     setSequence((s) => [...s, notation]);
     setRedo([]);
@@ -413,6 +425,7 @@ function Human() {
         next = generateScramble(n, nextSeed).scramble;
       }
       const state = applyMoves(createSolved(n), parseMoves(next, n));
+      setPreview(false);
       setSize(n);
       setInitial(state);
       setScramble(next);
@@ -472,12 +485,41 @@ function Human() {
               Color labels
             </label>
           </div>
-          <Cube initial={initial} moves={moves} speed={speed} labels={labels} onTurn={turn} />
+          <div hidden={preview}>
+            <Cube initial={initial} moves={moves} speed={speed} labels={labels} onTurn={turn} />
+          </div>
+          {preview && (
+            <Cube
+              key={previewVersion}
+              initial={previewInitial}
+              moves={previewMoves}
+              speed={speed}
+              labels={labels}
+            />
+          )}
+          {preview && (
+            <div className="playback">
+              <p>Scramble preview · personal timer paused</p>
+              <button className="button" onClick={() => setPreview(false)}>
+                Return to solve
+              </button>
+            </div>
+          )}
           <div className="stage-hint">Drag to orbit · Scroll to zoom · Tap a face to turn</div>
           <div className="timer">
-            {time(elapsed)}
+            <div data-testid="human-time" aria-label="Personal solve timer">
+              {time(elapsed)}
+            </div>
             <span>
-              {solved ? 'SOLVED' : paused ? 'PAUSED' : started ? 'SOLVING' : 'READY WHEN YOU ARE'}
+              {preview
+                ? 'PREVIEW · PERSONAL TIMER PAUSED'
+                : solved
+                  ? 'SOLVED'
+                  : paused
+                    ? 'PAUSED'
+                    : started
+                      ? 'SOLVING'
+                      : 'READY WHEN YOU ARE'}
             </span>
           </div>
           <div className="stage-stats">
@@ -634,6 +676,16 @@ function Human() {
             <code data-testid="scramble">{scramble || 'Solved state'}</code>
           </div>
           <div className="actions">
+            <button
+              className="button"
+              disabled={!scramble}
+              onClick={() => {
+                setPreviewVersion((v) => v + 1);
+                setPreview(true);
+              }}
+            >
+              Play scramble
+            </button>
             <button
               className="text-button"
               onClick={() => {
@@ -873,12 +925,28 @@ function Match({ id }: { id: string }) {
   const [seek, setSeek] = useState<number | null>(null);
   const [selectedRun, setSelectedRun] = useState('');
   useEffect(() => {
-    if (events.length)
+    if (!events.length) return;
+    const pending = setTimeout(() => {
       void api<{ match: MatchView }>('/matches/' + id)
         .then(setData)
         .catch(() => {});
+    }, 500);
+    return () => clearTimeout(pending);
   }, [events.length, id, setData]);
   const match = data.match;
+  const [snapshotAt, setSnapshotAt] = useState(() => performance.now());
+  const [displayNow, setDisplayNow] = useState(() => performance.now());
+  useEffect(() => {
+    const now = performance.now();
+    setSnapshotAt(now);
+    setDisplayNow(now);
+  }, [match]);
+  const hasActiveRuns = match?.runs.some((run) => run.status === 'active');
+  useEffect(() => {
+    if (!hasActiveRuns) return;
+    const timer = setInterval(() => setDisplayNow(performance.now()), 100);
+    return () => clearInterval(timer);
+  }, [hasActiveRuns]);
   const visible = events.slice(0, seek ?? events.length);
   const runId = selectedRun || match?.runs[0]?.run_id || events.find((e) => e.run_id)?.run_id;
   const runEvents = visible.filter((e) => e.run_id === runId);
@@ -933,6 +1001,7 @@ function Match({ id }: { id: string }) {
         </section>
         <section className="panel controls">
           <h2>Run activity</h2>
+          <p>Live elapsed is a display estimate. Final times are server-verified.</p>
           <label>
             Spectator entrant
             <select
@@ -959,7 +1028,29 @@ function Match({ id }: { id: string }) {
               <div>
                 <strong>{r.metadata.display_name}</strong>
                 <p>
-                  {r.move_count} moves · {time(r.elapsed_ms)} · {r.failure || r.status}
+                  {r.move_count} moves · {r.tool_call_count} calls ·{' '}
+                  <span data-testid={'spectator-time-' + r.run_id} aria-live="off">
+                    {time(
+                      r.elapsed_ms +
+                        (r.status === 'active' ? Math.max(0, displayNow - snapshotAt) : 0),
+                    )}
+                  </span>{' '}
+                  · {r.failure || r.status}
+                </p>
+                <p>
+                  {r.status === 'active'
+                    ? 'In progress'
+                    : r.solved
+                      ? '#' +
+                        (1 +
+                          (match?.runs.filter(
+                            (other) =>
+                              other.round_id === r.round_id &&
+                              other.solved &&
+                              other.elapsed_ms < r.elapsed_ms,
+                          ).length || 0)) +
+                        ' in round'
+                      : 'DNF'}
                 </p>
               </div>
               <ArrowUpRight size={16} />

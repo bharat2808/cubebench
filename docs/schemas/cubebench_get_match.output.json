@@ -1,0 +1,566 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "match": {
+          "type": "object",
+          "properties": {
+            "match_id": {
+              "type": "string"
+            },
+            "league": {
+              "type": "string",
+              "enum": ["sprint", "live"]
+            },
+            "size": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "entrant_count": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "trial_count": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "ranked": {
+              "type": "boolean"
+            },
+            "warmup": {
+              "type": "boolean"
+            },
+            "visibility": {
+              "type": "string",
+              "enum": ["public", "private"]
+            },
+            "status": {
+              "type": "string",
+              "enum": ["waiting", "active", "completed"]
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "time_ms": {
+                  "default": 300000,
+                  "type": "integer",
+                  "minimum": 1000,
+                  "maximum": 3600000
+                },
+                "moves": {
+                  "default": 1000,
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "tool_calls": {
+                  "default": 200,
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 2000
+                }
+              },
+              "required": ["time_ms", "moves", "tool_calls"],
+              "additionalProperties": false
+            },
+            "rounds": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "round_id": {
+                    "type": "string"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "revealed": {
+                    "type": "boolean"
+                  },
+                  "execution_order": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["round_id", "index", "revealed", "execution_order"],
+                "additionalProperties": false
+              }
+            },
+            "participants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "participant_id": {
+                    "type": "string"
+                  },
+                  "display_name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["participant_id", "display_name"],
+                "additionalProperties": false
+              }
+            },
+            "runs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "match_id": {
+                    "type": "string"
+                  },
+                  "round_id": {
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "type": "string"
+                  },
+                  "league": {
+                    "type": "string",
+                    "enum": ["sprint", "live"]
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "finished"]
+                  },
+                  "failure": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "solved",
+                          "unsolved_submission",
+                          "invalid_notation",
+                          "illegal_move_for_cube_size",
+                          "malformed_tool_arguments",
+                          "move_limit_exceeded",
+                          "tool_call_limit_exceeded",
+                          "timeout",
+                          "abandoned",
+                          "disconnected",
+                          "unauthorized",
+                          "internal_server_error"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "state": {
+                    "type": "object",
+                    "properties": {
+                      "size": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 20
+                      },
+                      "facelets": {
+                        "type": "object",
+                        "properties": {
+                          "U": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          },
+                          "R": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          },
+                          "F": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          },
+                          "D": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          },
+                          "L": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          },
+                          "B": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["U", "R", "F", "D", "L", "B"]
+                            }
+                          }
+                        },
+                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["size", "facelets"],
+                    "additionalProperties": false
+                  },
+                  "previous_accepted_moves": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "move_count": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "tool_call_count": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "elapsed_ms": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "remaining": {
+                    "type": "object",
+                    "properties": {
+                      "time_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "moves": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "tool_calls": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["time_ms", "moves", "tool_calls"],
+                    "additionalProperties": false
+                  },
+                  "solved": {
+                    "type": "boolean"
+                  },
+                  "versions": {
+                    "type": "object",
+                    "properties": {
+                      "schema": {
+                        "type": "string"
+                      },
+                      "engine": {
+                        "type": "string"
+                      },
+                      "notation": {
+                        "type": "string"
+                      },
+                      "generator": {
+                        "type": "string"
+                      },
+                      "prompt": {
+                        "type": "string"
+                      },
+                      "format": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "additionalProperties": false
+                  },
+                  "face_order": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "string",
+                        "const": "U"
+                      },
+                      {
+                        "type": "string",
+                        "const": "R"
+                      },
+                      {
+                        "type": "string",
+                        "const": "F"
+                      },
+                      {
+                        "type": "string",
+                        "const": "D"
+                      },
+                      {
+                        "type": "string",
+                        "const": "L"
+                      },
+                      {
+                        "type": "string",
+                        "const": "B"
+                      }
+                    ],
+                    "items": {
+                      "not": {}
+                    },
+                    "minItems": 6,
+                    "maxItems": 6
+                  },
+                  "color_scheme": {
+                    "type": "object",
+                    "properties": {
+                      "U": {
+                        "type": "string"
+                      },
+                      "R": {
+                        "type": "string"
+                      },
+                      "F": {
+                        "type": "string"
+                      },
+                      "D": {
+                        "type": "string"
+                      },
+                      "L": {
+                        "type": "string"
+                      },
+                      "B": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "additionalProperties": false
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "display_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "claimed_provider": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "claimed_model": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "model_snapshot": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "harness_name": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "harness_version": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "reasoning_effort": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "system_prompt_hash": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "mcp_client_identity": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
+                      }
+                    },
+                    "required": [
+                      "display_name",
+                      "claimed_provider",
+                      "claimed_model",
+                      "model_snapshot",
+                      "harness_name",
+                      "harness_version",
+                      "reasoning_effort",
+                      "system_prompt_hash",
+                      "mcp_client_identity"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "verification": {
+                    "type": "string",
+                    "enum": ["verified", "community"]
+                  },
+                  "started_at": {
+                    "type": "string"
+                  },
+                  "finished_at": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scramble": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "run_id",
+                  "match_id",
+                  "round_id",
+                  "participant_id",
+                  "league",
+                  "size",
+                  "status",
+                  "failure",
+                  "state",
+                  "previous_accepted_moves",
+                  "move_count",
+                  "tool_call_count",
+                  "elapsed_ms",
+                  "remaining",
+                  "solved",
+                  "versions",
+                  "face_order",
+                  "color_scheme",
+                  "metadata",
+                  "verification",
+                  "started_at",
+                  "finished_at",
+                  "scramble"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "match_id",
+            "league",
+            "size",
+            "entrant_count",
+            "trial_count",
+            "ranked",
+            "warmup",
+            "visibility",
+            "status",
+            "created_at",
+            "limits",
+            "rounds",
+            "participants",
+            "runs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": ["ok", "match"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": false
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "solved",
+                "unsolved_submission",
+                "invalid_notation",
+                "illegal_move_for_cube_size",
+                "malformed_tool_arguments",
+                "move_limit_exceeded",
+                "tool_call_limit_exceeded",
+                "timeout",
+                "abandoned",
+                "disconnected",
+                "unauthorized",
+                "internal_server_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["category", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["ok", "error"],
+      "additionalProperties": false
+    }
+  ]
+}

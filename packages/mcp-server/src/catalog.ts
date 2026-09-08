@@ -1,5 +1,6 @@
 import { Server, CLIENT_INFO_META_KEY, type Tool } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { portableSchema } from './schema-portability.ts';
 import {
   TOOL_ORDER,
   toolInputs,
@@ -12,8 +13,8 @@ export const COMPETE_PROMPT =
 export const catalog = TOOL_ORDER.map((name) => ({
   name,
   description: descriptions[name],
-  inputSchema: z.toJSONSchema(toolInputs[name]),
-  outputSchema: { type: 'object', ...z.toJSONSchema(toolOutput(name)) },
+  inputSchema: portableSchema(z.toJSONSchema(toolInputs[name])),
+  outputSchema: portableSchema({ type: 'object', ...z.toJSONSchema(toolOutput(name)) }),
   annotations: {
     readOnlyHint: [
       'cubebench_get_rules',

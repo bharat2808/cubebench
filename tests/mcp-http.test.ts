@@ -370,3 +370,42 @@ it('requires TLS for production and sets production security headers', async () 
   expect(response.headers.get('strict-transport-security')).toContain('max-age');
   expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
 });
+
+it('rejects absent and URL-shaped Host authorities and accepts explicit loopback ports', async () => {
+  const { url } = await setup();
+  for (const host of [
+    'evil@127.0.0.1',
+    '127.0.0.1/path',
+    '127.0.0.1?query',
+    '127.0.0.1#fragment',
+    '0x7f000001',
+    '127.0.0.1:99999',
+    '',
+  ]) {
+    const status = await new Promise<number | undefined>((resolve) => {
+      httpRequest(
+        url + '/api/config',
+        { setHost: false, headers: host ? { Host: host } : {} },
+        (res) => {
+          res.resume();
+          resolve(res.statusCode);
+        },
+      ).end();
+    });
+    expect([400, 403]).toContain(status);
+  }
+  const status = await new Promise<number | undefined>((resolve) => {
+    httpRequest(url + '/api/config', { headers: { Host: 'localhost:80' } }, (res) => {
+      res.resume();
+      resolve(res.statusCode);
+    }).end();
+  });
+  expect(status).toBe(200);
+  const ipv6 = await new Promise<number | undefined>((resolve) => {
+    httpRequest(url + '/api/config', { headers: { Host: '[::1]:4310' } }, (res) => {
+      res.resume();
+      resolve(res.statusCode);
+    }).end();
+  });
+  expect(ipv6).toBe(200);
+});

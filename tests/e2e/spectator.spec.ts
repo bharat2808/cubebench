@@ -64,6 +64,15 @@ for (const league of ['sprint', 'live']) {
       await page.evaluate(() => (window as unknown as { stream: { url: string } }).stream.url),
     ).toContain('after=1');
     await page.getByRole('button', { name: 'Pause playback', exact: true }).click();
+    await expect(page.getByRole('link').filter({ hasText: 'Test runner' })).toContainText(
+      '1 calls',
+    );
+    await expect(page.getByText('In progress', { exact: true })).toBeVisible();
+    const liveBefore = parseFloat((await page.getByTestId('spectator-time-run-a').textContent())!);
+    await expect
+      .poll(async () => parseFloat((await page.getByTestId('spectator-time-run-a').textContent())!))
+      .toBeGreaterThan(liveBefore + 0.2);
+
     await page.evaluate((cubeState) => {
       const stream = (
         window as unknown as { stream: EventTarget & { onerror: () => void; onopen: () => void } }
@@ -112,4 +121,40 @@ test('verified and community leaderboards request separate result classes', asyn
       requests.some((r) => r.includes('league=live') && r.includes('result_class=community')),
     )
     .toBe(true);
+});
+test('run replay seeks accepted moves without changing official duration', async ({ page }) => {
+  const run = {
+    run_id: 'run-r',
+    match_id: 'match-r',
+    size: 3,
+    league: 'sprint',
+    metadata: { display_name: 'Replay runner' },
+    state: createSolved(3),
+    scramble: 'R',
+    move_count: 1,
+    elapsed_ms: 200,
+    status: 'finished',
+    failure: 'solved',
+    tool_call_count: 2,
+    verification: 'community',
+  };
+  await page.route('**/api/runs/run-r', (r) =>
+    r.fulfill({
+      json: {
+        run,
+        events: [
+          { id: 1, type: 'run_started', state, move: null },
+          { id: 2, type: 'move_accepted', state: createSolved(3), move: "R'" },
+        ],
+      },
+    }),
+  );
+  await page.goto('/#run/run-r');
+  await expect(page.getByLabel('Move timeline')).toHaveAttribute('max', '1');
+  await page.getByRole('button', { name: 'Play replay' }).click();
+  await expect(page.getByLabel('Move timeline')).toHaveValue('1');
+  await expect(page.getByText('0.20s', { exact: false })).toBeVisible();
+  await page.getByLabel('Move timeline').fill('0');
+  await expect(page.getByRole('button', { name: 'Play replay' })).toBeVisible();
+  await expect(page.getByText('0.20s', { exact: false })).toBeVisible();
 });

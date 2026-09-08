@@ -37,7 +37,15 @@ export function security(store: Repository, options: SecurityOptions) {
   const guard = (req: Request, res: Response, next: NextFunction) => {
     let host: URL;
     try {
-      host = new URL(`http://${req.headers.host}`);
+      const authority = req.headers.host;
+      if (!authority || !/^(\[[0-9a-fA-F:.]+\]|[a-zA-Z0-9.-]+)(?::[0-9]{1,5})?$/.test(authority))
+        throw new Error('Invalid authority');
+      host = new URL(`http://${authority}`);
+      const rawHostname = authority.startsWith('[')
+        ? authority.slice(0, authority.indexOf(']') + 1)
+        : authority.split(':')[0];
+      if (rawHostname?.toLowerCase() !== host.hostname.toLowerCase())
+        throw new Error('Noncanonical host');
     } catch {
       res.status(403).json({ error: 'Invalid Host' });
       return;

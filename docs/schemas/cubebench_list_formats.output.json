@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "league": {
+                "type": "string",
+                "enum": ["sprint", "live"]
+              },
+              "sizes": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "metric": {
+                "type": "string",
+                "const": "verified_wall_clock_ms"
+              }
+            },
+            "required": ["id", "version", "league", "sizes", "metric"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["ok", "formats"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": false
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "solved",
+                "unsolved_submission",
+                "invalid_notation",
+                "illegal_move_for_cube_size",
+                "malformed_tool_arguments",
+                "move_limit_exceeded",
+                "tool_call_limit_exceeded",
+                "timeout",
+                "abandoned",
+                "disconnected",
+                "unauthorized",
+                "internal_server_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["category", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["ok", "error"],
+      "additionalProperties": false
+    }
+  ]
+}

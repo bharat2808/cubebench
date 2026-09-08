@@ -1,0 +1,156 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "league": {
+          "type": "string",
+          "enum": ["sprint", "live"]
+        },
+        "result_class": {
+          "type": "string",
+          "enum": ["verified", "community"]
+        },
+        "size": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "competitor": {
+                "type": "string"
+              },
+              "identity_key": {
+                "type": "string"
+              },
+              "attempts": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "completed": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "completion_rate": {
+                "type": "number"
+              },
+              "median_ms": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "mean_ms": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "minimum_ms": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maximum_ms": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "best_run_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "competitor",
+              "identity_key",
+              "attempts",
+              "completed",
+              "completion_rate",
+              "median_ms",
+              "mean_ms",
+              "minimum_ms",
+              "maximum_ms",
+              "best_run_id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["ok", "league", "result_class", "size", "rows"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": false
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": [
+                "solved",
+                "unsolved_submission",
+                "invalid_notation",
+                "illegal_move_for_cube_size",
+                "malformed_tool_arguments",
+                "move_limit_exceeded",
+                "tool_call_limit_exceeded",
+                "timeout",
+                "abandoned",
+                "disconnected",
+                "unauthorized",
+                "internal_server_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["category", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["ok", "error"],
+      "additionalProperties": false
+    }
+  ]
+}

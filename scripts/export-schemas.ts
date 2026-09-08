@@ -11,3 +11,4 @@ for (const tool of catalog) {
     JSON.stringify(tool.outputSchema, null, 2) + '\n',
   );
 }
+writeFileSync('docs/schemas/tools.json', JSON.stringify({ tools: catalog }, null, 2) + '\n');

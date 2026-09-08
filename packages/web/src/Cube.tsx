@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, RoundedBox } from '@react-three/drei';
 import { CanvasTexture, Group } from 'three';
@@ -17,6 +17,60 @@ const colors: Record<Face, string> = {
   L: '#efa265',
   B: '#75a9e4',
 };
+class RendererBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+function supportsWebGL() {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2');
+    if (!gl) return false;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+function CubeFallback({ state, onTurn }: { state: CubeState; onTurn?: (face: string) => void }) {
+  return (
+    <div className="cube-unavailable">
+      <p>3D rendering unavailable. The cube net and face move buttons remain usable.</p>
+      <div className="cube-net">
+        {Object.entries(state.facelets).map(([face, stickers]) => (
+          <button
+            type="button"
+            className="net-face"
+            key={face}
+            aria-label={'Turn ' + face + ' from cube net'}
+            disabled={!onTurn}
+            onClick={() => onTurn?.(face)}
+          >
+            <strong>{face} face</strong>
+            <span
+              className="net-stickers"
+              style={{ gridTemplateColumns: `repeat(${state.size},minmax(0,1fr))` }}
+            >
+              {stickers.map((color, index) => (
+                <span key={index} style={{ background: colors[color] }}>
+                  {color}
+                </span>
+              ))}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 function Stickers({
   state,
   active,
@@ -139,6 +193,8 @@ export function Cube({
   onTurn?: (face: string) => void;
 }) {
   const [state, setState] = useState(initial);
+  const [webGL] = useState(supportsWebGL);
+  const [contextLost, setContextLost] = useState(false);
   const [index, setIndex] = useState(0);
   const progress = useRef(0);
   const reduced =
@@ -171,33 +227,43 @@ export function Cube({
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [moves, index, speed, paused, reduced]);
+  const fallback = <CubeFallback state={applyMoves(initial, moves)} onTurn={onTurn} />;
+  if (!webGL || contextLost) return fallback;
   return (
-    <div
-      className="cube-canvas"
-      role="img"
-      aria-label={`${initial.size} by ${initial.size} interactive cube. Drag to orbit; scroll to zoom. Use face move buttons to turn.`}
-    >
-      <Canvas
-        fallback={
-          <p className="empty">
-            3D rendering unavailable. All face move controls remain available below.
-          </p>
-        }
-        camera={{ position: [5, 4.1, 5.8], fov: 39 }}
+    <RendererBoundary fallback={fallback}>
+      <div
+        className="cube-canvas"
+        role="img"
+        aria-label={`${initial.size} by ${initial.size} interactive cube. Drag to orbit; scroll to zoom. Use face move buttons to turn.`}
       >
-        <ambientLight intensity={1.8} />
-        <directionalLight position={[4, 8, 6]} intensity={2.6} />
-        <Suspense fallback={null}>
-          <Stickers
-            state={state}
-            active={moves[index]}
-            progress={progress}
-            onTurn={onTurn}
-            labels={labels}
-          />
-        </Suspense>
-        <OrbitControls enablePan={false} minDistance={5} maxDistance={12} />
-      </Canvas>
-    </div>
+        <Canvas
+          fallback={<p>3D rendering unavailable. Use the face move buttons.</p>}
+          onCreated={({ gl }) => {
+            gl.domElement.addEventListener(
+              'webglcontextlost',
+              (event) => {
+                event.preventDefault();
+                setContextLost(true);
+              },
+              { once: true },
+            );
+          }}
+          camera={{ position: [5, 4.1, 5.8], fov: 39 }}
+        >
+          <ambientLight intensity={1.8} />
+          <directionalLight position={[4, 8, 6]} intensity={2.6} />
+          <Suspense fallback={null}>
+            <Stickers
+              state={state}
+              active={moves[index]}
+              progress={progress}
+              onTurn={onTurn}
+              labels={labels}
+            />
+          </Suspense>
+          <OrbitControls enablePan={false} minDistance={5} maxDistance={12} />
+        </Canvas>
+      </div>
+    </RendererBoundary>
   );
 }

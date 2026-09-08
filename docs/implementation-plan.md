@@ -10,5 +10,16 @@ Spec: `docs/architecture.md`. All changes remain inside this project. No provide
 6. **Delivery and review** — documentation for setup/deploy/env/migrate/MCP/rules/trust/notation/security/troubleshoot/export/compatibility; generate tool JSON schemas from source; reviewed acceptance map and commands with actual outputs. Run `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`, Inspector CLI and UI. Resolve failures, then independent review for load-bearing security/fairness defects. No completion claim while checks fail.
 
 ## Progress ledger
+
 - Preflight: new isolated directory; parent ChatGPT-specific instructions superseded by explicit standalone brief. Architecture and SDK research completed before implementation.
 - Interface review: cube engine consumed by benchmark and web; shared contract schema is the integration authority. Persistence only consumed by service. SSE public view must enforce round-start reveal barrier.
+
+## Execution ledger
+
+- Foundation/contracts: implemented; strict schemas exported, SDK documentation verified.
+- Pure cube engine: implemented; 21 property/conventional mapping tests pass.
+- Persistence/benchmark: implemented; 32 domain/persistence tests pass, signatures and review regressions included.
+- MCP/HTTP/SSE: implemented; 20 protocol/security/schema/backpressure tests pass, Inspector strict+manual UI verified.
+- Web: implemented; all 15 browser tests pass, including real MCP→SSE matches, scramble preview, live standings and accessibility.
+- Review fixes: no prefiltered leaderboard cap, stable submitter identity, deadline-at-verification, all-row restart recovery, dormant later-round tickets, portable schemas, hardened Host, bounded SSE buffers.
+- Final gates: clean npm ci, schema generation, formatting, lint, strict type checking, 73 unit/integration/protocol tests, 15 browser tests and production build passed. Dependency audit: zero vulnerabilities. Inspector CLI and manual UI passed.

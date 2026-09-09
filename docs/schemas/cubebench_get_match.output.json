@@ -234,6 +234,16 @@
                     "required": ["size", "facelets"],
                     "additionalProperties": false
                   },
+                  "scramble": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "previous_accepted_moves": {
                     "type": "array",
                     "items": {
@@ -461,16 +471,6 @@
                         "type": "null"
                       }
                     ]
-                  },
-                  "scramble": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
                   }
                 },
                 "required": [
@@ -483,6 +483,7 @@
                   "status",
                   "failure",
                   "state",
+                  "scramble",
                   "previous_accepted_moves",
                   "move_count",
                   "tool_call_count",
@@ -495,8 +496,7 @@
                   "metadata",
                   "verification",
                   "started_at",
-                  "finished_at",
-                  "scramble"
+                  "finished_at"
                 ],
                 "additionalProperties": false
               }

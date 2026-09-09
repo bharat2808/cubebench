@@ -6,6 +6,7 @@ import {
   type Actor,
   type Repository,
 } from '../../persistence/src/index.ts';
+import { normalizePublicUrl } from '../../shared-contracts/src/index.ts';
 export type SecurityOptions = {
   publicUrl?: string;
   allowedHosts?: string[];
@@ -18,9 +19,7 @@ export type SecurityOptions = {
   concurrencyLimit?: number;
 };
 export function security(store: Repository, options: SecurityOptions) {
-  const publicUrl = options.publicUrl ?? 'http://127.0.0.1:4310';
-  if (options.production && new URL(publicUrl).protocol !== 'https:')
-    throw new Error('Production requires HTTPS public URL');
+  const publicUrl = normalizePublicUrl(options.publicUrl, options.production);
   if (Boolean(options.oauthIssuer) !== Boolean(options.oauthJwks))
     throw new Error('OAuth requires issuer and JWKS');
   if (options.oauthIssuer && !options.publicUrl)

@@ -6,10 +6,11 @@ import {
   toolInputs,
   toolOutput,
   descriptions,
+  VERSIONS,
   type ToolName,
 } from '../../shared-contracts/src/index.ts';
 export const COMPETE_PROMPT =
-  'Read cubebench_get_rules and cubebench_list_formats first. Create or join a match using the supplied participant token. Call cubebench_start_run with explicit IDs and truthful model/harness metadata. The authoritative timer starts when state is delivered. Sprint: reason and submit exactly one complete sequence. Live: apply at most 12 moves per call and inspect returned state. Reads consume budget. No reset, solver, code execution, or hints are available. Keep tokens private. Stop when solved or failed. Self-reported identity is community, never verified.';
+  'Read cubebench_get_rules and cubebench_list_formats first. Create or join a match using the supplied participant token. After cubebench_create_match, open a non-null spectator_url in a visual browser before cubebench_start_run when the harness can show live previews. Call cubebench_start_run with explicit IDs and truthful model/harness metadata. The authoritative timer starts when the scrambled facelet state is delivered; the generating scramble remains hidden until the round ends. Sprint: reason and submit exactly one complete sequence. Live: apply legal moves up to the remaining move budget and inspect returned state; visual playback may trail execution. Reads consume budget. No reset, solver, code execution, or hints are available. Keep tokens private. Stop when solved or failed. Self-reported identity is community, never verified.';
 export const catalog = TOOL_ORDER.map((name) => ({
   name,
   description: descriptions[name],
@@ -68,7 +69,7 @@ export function buildServer(
   server.setRequestHandler('prompts/get', (request) => {
     if (request.params.name !== 'cubebench_compete') throw new Error('Unknown prompt');
     return {
-      description: 'CubeBench competition prompt v1.0.0',
+      description: `CubeBench competition prompt v${VERSIONS.prompt}`,
       messages: [{ role: 'user', content: { type: 'text', text: COMPETE_PROMPT } }],
     };
   });

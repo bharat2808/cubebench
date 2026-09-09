@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { SqliteRepository, issueAccessToken } from '../../packages/persistence/src/index';
 import { invertMoves, parseMoves, serializeMoves } from '../../packages/cube-core/src/index';
 import { toolSuccessOutputs, type ToolName } from '../../packages/shared-contracts/src/index';
+import type { Match } from '../../packages/benchmark-core/src/index';
 
 for (const league of ['sprint', 'live'] as const) {
   test(`real ${league} MCP solve reaches browser SSE and survives reload`, async ({
@@ -44,6 +45,7 @@ for (const league of ['sprint', 'live'] as const) {
         participant_token: credential.participant_token,
         metadata: { display_name: `Actual ${league} runner` },
       });
+      expect(started.run.scramble).toBeNull();
       await page.goto('/#match/' + match.match_id);
       await expect(page.getByText('Connected', { exact: true })).toBeVisible();
       await expect(page.getByText('run started', { exact: true })).toBeVisible();
@@ -52,7 +54,8 @@ for (const league of ['sprint', 'live'] as const) {
       await expect(row).toContainText('active');
 
       // A known inverse is a deterministic test fixture, never a production solver or tool.
-      const inverse = invertMoves(parseMoves(started.run.scramble, started.run.size));
+      const persisted = repository.get<Match>('matches', match.match_id)!;
+      const inverse = invertMoves(parseMoves(persisted.rounds[0]!.scramble, started.run.size));
       const runArgs = {
         match_id: match.match_id,
         participant_id: participant.participant_id,
@@ -66,13 +69,11 @@ for (const league of ['sprint', 'live'] as const) {
         });
         expect(submitted.result?.success).toBe(true);
       } else {
-        for (let index = 0; index < inverse.length; index += 12) {
-          const batch = await call('cubebench_apply_moves', {
-            ...runArgs,
-            sequence: serializeMoves(inverse.slice(index, index + 12)),
-          });
-          if (index + 12 >= inverse.length) expect(batch.result?.success).toBe(true);
-        }
+        const batch = await call('cubebench_apply_moves', {
+          ...runArgs,
+          sequence: serializeMoves(inverse),
+        });
+        expect(batch.result?.success).toBe(true);
       }
       await expect(row).toContainText(`${inverse.length} moves`);
       await expect(row).toContainText('solved');

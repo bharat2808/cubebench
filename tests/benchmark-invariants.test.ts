@@ -97,8 +97,44 @@ function inverse(scramble: string) {
 function storedRun(s: ReturnType<typeof setup>, id: string) {
   return s.store.get<Run>('runs', id)!;
 }
+function internalScramble(s: ReturnType<typeof setup>, runId: string) {
+  return storedRun(s, runId).scramble;
+}
 
 describe('benchmark independent fairness and security invariants', () => {
+  it('withholds the scramble from active tools and events until the round is complete', () => {
+    const s = setup(),
+      match = s.create({ entrant_count: 2 }),
+      a = s.start(match),
+      b = s.start(match, 1);
+    const secret = internalScramble(s, a.args.run_id);
+    expect(a.response.run.scramble).toBeNull();
+    expect(s.call('cubebench_get_run', a.args).run.scramble).toBeNull();
+    expect(JSON.stringify(s.service.getMatch(match.match_id))).not.toContain(secret);
+    expect(JSON.stringify(s.service.getEvents(match.match_id))).not.toContain(secret);
+
+    s.call('cubebench_submit_solution', { ...a.args, sequence: inverse(secret) });
+    expect(s.call('cubebench_get_run', a.args).run.scramble).toBeNull();
+    s.call('cubebench_submit_solution', {
+      ...b.args,
+      sequence: inverse(internalScramble(s, b.args.run_id)),
+    });
+
+    expect(s.call('cubebench_get_run', a.args).run.scramble).toBe(secret);
+    expect(s.service.getMatch(match.match_id).runs[0]?.scramble).toBe(secret);
+    expect(
+      s.service.getEvents(match.match_id).some((event) => event.type === 'scramble_revealed'),
+    ).toBe(true);
+  });
+  it('accepts a Live sequence larger than twelve moves in one call', () => {
+    const s = setup(),
+      a = s.start(s.create({ league: 'live' }));
+    const solution = inverse(internalScramble(s, a.args.run_id));
+    expect(solution.split(' ').length).toBeGreaterThan(12);
+    const response = s.call('cubebench_apply_moves', { ...a.args, sequence: solution });
+    expect(response.run.failure).toBe('solved');
+    expect(response.accepted_moves.length).toBeGreaterThan(12);
+  });
   it('never exposes seeds through early terminal mutation results', () => {
     const s = setup(),
       match = s.create({ entrant_count: 2, trial_count: 2 }),
@@ -141,14 +177,14 @@ describe('benchmark independent fairness and security invariants', () => {
     const b = s.start(match, 1);
     s.call('cubebench_abandon_run', b.args);
     const next = s.call('cubebench_start_run', nextArgs);
-    expect(next.run.scramble).not.toBe(a.response.run.scramble);
+    expect(internalScramble(s, next.run.run_id)).not.toBe(internalScramble(s, a.args.run_id));
     expect(s.store.list('runs', { match_id: match.match_id })).toHaveLength(3);
   });
   it('serializes overlapping same-run submissions into exactly one immutable result', async () => {
     const s = setup(),
       match = s.create(),
       a = s.start(match);
-    const args = { ...a.args, sequence: inverse(a.response.run.scramble) };
+    const args = { ...a.args, sequence: inverse(internalScramble(s, a.args.run_id)) };
     const outputs = await Promise.all(
       Array.from({ length: 8 }, () =>
         Promise.resolve().then(() =>
@@ -225,7 +261,8 @@ describe('benchmark independent fairness and security invariants', () => {
       s.call('cubebench_apply_moves', { ...a.args, sequence: Array(12).fill('R').join(' ') });
     s.call('cubebench_abandon_run', a.args);
     const replay = s.service.getPublicRun(a.args.run_id);
-    expect(replay.events.at(-1)?.type).toBe('run_abandoned');
+    expect(replay.events.some((event) => event.type === 'run_abandoned')).toBe(true);
+    expect(replay.events.at(-1)?.type).toBe('scramble_revealed');
     expect(replay.events.filter((event) => event.type === 'move_accepted')).toHaveLength(960);
   });
   it('move budgets accept only the legal Live prefix and reject Sprint atomically', () => {
@@ -284,7 +321,10 @@ describe('benchmark independent fairness and security invariants', () => {
     const s = setup(),
       a = s.start(s.create());
     s.tick(27);
-    s.call('cubebench_submit_solution', { ...a.args, sequence: inverse(a.response.run.scramble) });
+    s.call('cubebench_submit_solution', {
+      ...a.args,
+      sequence: inverse(internalScramble(s, a.args.run_id)),
+    });
     const result = resultSchema.parse(s.store.list('results')[0]);
     expect(s.service.verifyResult(result)).toBe(true);
     for (const tampered of [
@@ -320,11 +360,11 @@ describe('benchmark independent fairness and security invariants', () => {
       if (input.league === 'sprint')
         s.call(
           'cubebench_submit_solution',
-          { ...a.args, sequence: inverse(a.response.run.scramble) },
+          { ...a.args, sequence: inverse(internalScramble(s, a.args.run_id)) },
           actor,
         );
       else {
-        const moves = inverse(a.response.run.scramble).split(' ');
+        const moves = inverse(internalScramble(s, a.args.run_id)).split(' ');
         for (let i = 0; i < moves.length; i += 12)
           s.call(
             'cubebench_apply_moves',

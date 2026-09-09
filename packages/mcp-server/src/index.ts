@@ -167,7 +167,17 @@ export function createApp(
     res.json(service.execute('cubebench_get_leaderboard', filters(req), publicActor)),
   );
   app.get('/api/results', (req, res) => {
-    const f = filters(req);
+    const f = z
+      .strictObject({
+        league: z.enum(['sprint', 'live']).optional(),
+        result_class: z.enum(['verified', 'community']).optional(),
+        size: z.coerce.number().int().min(2).max(7).optional(),
+      })
+      .parse({
+        league: req.query.league,
+        result_class: req.query.result_class,
+        size: req.query.size,
+      });
     res.json({ results: service.getPublicResults(f.league, f.result_class, f.size) });
   });
   app.get('/api/human/solves', (req, res) => {

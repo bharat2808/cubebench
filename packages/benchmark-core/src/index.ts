@@ -26,6 +26,7 @@ import {
   type MatchView,
   createMatchSchema,
   metadataSchema,
+  normalizePublicUrl,
 } from '../../shared-contracts/src/index.js';
 import type { Match, Run, Round } from './types.js';
 import { digest, ResultSigner } from './signatures.js';
@@ -47,23 +48,25 @@ const START_WINDOW_MS = 3600000;
 const LEAGUE_INSTRUCTIONS = {
   sprint:
     'Submit exactly one complete solution with cubebench_submit_solution. No intermediate execution, hints or reset. The clock is running.',
-  live: 'Call cubebench_apply_moves with 1–12 moves per batch until solved. Reasoning and round trips count. No hints or reset. The clock is running.',
+  live: 'Call cubebench_apply_moves with legal moves up to the remaining move budget. Reasoning and round trips count. Visual playback may trail execution. No hints or reset. The clock is running.',
 };
 export class BenchmarkService {
   readonly publicKey: string;
   private readonly signer: ResultSigner;
   private readonly clock: () => number;
+  private readonly publicUrl: string;
   constructor(
     readonly store: Repository,
-    options: { clock?: () => number; signingKeyPath?: string } = {},
+    options: { clock?: () => number; signingKeyPath?: string; publicUrl?: string } = {},
   ) {
     this.clock = options.clock ?? (() => performance.now());
+    this.publicUrl = normalizePublicUrl(options.publicUrl);
     this.signer = new ResultSigner(options.signingKeyPath);
     this.publicKey = this.signer.publicKey;
     this.store.transaction(() => {
       for (const league of ['sprint', 'live'])
-        this.store.put('formats', `${league}-1.0.0`, {
-          id: `${league}-v1`,
+        this.store.put('formats', `${league}-${VERSIONS.format}`, {
+          id: `${league}-v2`,
           version: VERSIONS.format,
           league,
           sizes: [2, 3, 4, 5, 6, 7],
@@ -120,7 +123,7 @@ export class BenchmarkService {
               'internal_server_error',
             ],
             fairness:
-              'Fresh seeded random legal scrambles, not uniform random states. Identical scramble and budgets per round. Start counts as call 1; reads and rejected authorized calls count. Warmups never rank. Public state delayed until all entrants start.',
+              'Fresh seeded random legal scrambles, not uniform random states. Identical state and budgets per round. The generating sequence stays hidden until every entrant in the round finishes. Start counts as call 1; reads and rejected authorized calls count. Warmups never rank. Public state is delayed until all entrants start.',
           };
           break;
         case 'cubebench_list_formats':
@@ -281,6 +284,8 @@ export class BenchmarkService {
       return {
         ok: true,
         match_id,
+        spectator_url:
+          input.visibility === 'public' ? `${this.publicUrl}/#match/${match_id}` : null,
         participants: credentials,
         rounds: rounds.map(({ round_id, index, execution_order }) => ({
           round_id,
@@ -414,7 +419,6 @@ export class BenchmarkService {
       this.saveMatch(m);
       this.saveRun(run);
       this.emit(m, run, 'run_started');
-      this.emit(m, run, 'scramble_revealed');
       return {
         ok: true,
         run: this.view(run),
@@ -548,20 +552,6 @@ export class BenchmarkService {
       }
       const sequence = a.sequence as string;
       const tokens = sequence.trim() ? sequence.trim().split(/\s+/u) : [];
-      if (run.league === 'live' && (tokens.length < 1 || tokens.length > 12)) {
-        run.attempts.push({
-          call_index: run.tool_call_count,
-          sequence,
-          accepted: [],
-          rejected: tokens,
-          failure: 'malformed_tool_arguments',
-        });
-        this.finish(m, run, 'malformed_tool_arguments');
-        return failure(
-          'malformed_tool_arguments',
-          'Live batches require 1–12 moves. Attempt ended.',
-        );
-      }
       const attempt: ResultRecord['attempts'][number] = {
         call_index: run.tool_call_count,
         sequence,
@@ -746,6 +736,13 @@ export class BenchmarkService {
     run.result_id = result.result_id;
     this.saveRun(run);
     const all = this.store.list<Run>('runs', { match_id: m.match_id }, 200);
+    const roundRuns = all.filter((candidate) => candidate.round_id === run.round_id);
+    if (
+      roundRuns.length === m.entrant_count &&
+      roundRuns.every((candidate) => candidate.status === 'finished')
+    ) {
+      for (const candidate of roundRuns) this.emit(m, candidate, 'scramble_revealed');
+    }
     if (
       all.length === m.entrant_count * m.trial_count &&
       all.every((r) => r.status === 'finished')
@@ -809,6 +806,18 @@ export class BenchmarkService {
       return { ...body, hash: digest(body) };
     }) as CubeEvent;
   }
+  private scrambleRevealed(run: Run): boolean {
+    const match = this.store.get<Match>('matches', run.match_id);
+    if (!match) return false;
+    if (match.status === 'completed') return true;
+    const roundRuns = this.store
+      .list<Run>('runs', { match_id: run.match_id }, 200)
+      .filter((candidate) => candidate.round_id === run.round_id);
+    return (
+      roundRuns.length === match.entrant_count &&
+      roundRuns.every((candidate) => candidate.status === 'finished')
+    );
+  }
   private view(run: Run): RunView {
     return {
       run_id: run.run_id,
@@ -820,7 +829,7 @@ export class BenchmarkService {
       status: run.status,
       failure: run.failure,
       state: structuredClone(run.state),
-      scramble: run.scramble,
+      scramble: this.scrambleRevealed(run) ? run.scramble : null,
       previous_accepted_moves: [...run.accepted],
       move_count: run.accepted.length,
       tool_call_count: run.tool_call_count,
@@ -905,24 +914,23 @@ export class BenchmarkService {
     return { run: this.view(r), events };
   }
   getPublicResults(
-    league: 'sprint' | 'live',
-    resultClass: 'verified' | 'community',
-    size: number,
+    league?: 'sprint' | 'live',
+    resultClass?: 'verified' | 'community',
+    size?: number,
   ): ResultRecord[] {
-    return this.store
-      .list<ResultRecord>(
-        'results',
-        { league, size, classification: resultClass === 'verified' ? 'ranked' : 'community' },
-        Number.MAX_SAFE_INTEGER,
-      )
-      .filter((r) => {
-        const m = this.store.get<Match>('matches', r.match_id);
-        return (
-          m?.visibility === 'public' &&
-          m.status === 'completed' &&
-          r.verification === (resultClass === 'verified' ? 'verified' : 'community')
-        );
-      });
+    const index: Record<string, string | number> = {};
+    if (league) index.league = league;
+    if (size) index.size = size;
+    if (resultClass) index.classification = resultClass === 'verified' ? 'ranked' : 'community';
+    return this.store.list<ResultRecord>('results', index, Number.MAX_SAFE_INTEGER).filter((r) => {
+      const m = this.store.get<Match>('matches', r.match_id);
+      return (
+        m?.visibility === 'public' &&
+        m.status === 'completed' &&
+        r.classification !== 'practice' &&
+        (!resultClass || r.verification === (resultClass === 'verified' ? 'verified' : 'community'))
+      );
+    });
   }
   private leaderboard(
     league: 'sprint' | 'live',

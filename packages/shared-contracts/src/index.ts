@@ -1,13 +1,36 @@
 import { z } from 'zod';
 
 export const VERSIONS = {
-  schema: '1.0.0',
+  schema: '2.0.0',
   engine: '1.0.0',
   notation: '1.0.0',
   generator: '1.0.0',
-  prompt: '1.0.0',
-  format: '1.0.0',
+  prompt: '2.0.0',
+  format: '2.0.0',
 } as const;
+export function normalizePublicUrl(value = 'http://127.0.0.1:4310', production = false): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('CubeBench public URL must be an absolute HTTP(S) origin');
+  }
+  if (production && url.protocol !== 'https:')
+    throw new Error('Production requires HTTPS public URL');
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error(
+      'CubeBench public URL must be an HTTP(S) origin without credentials, path, query, or fragment',
+    );
+  }
+  return url.origin;
+}
 export const faceSchema = z.enum(['U', 'R', 'F', 'D', 'L', 'B']);
 export const cubeSchema = z.strictObject({
   size: z.number().int().min(2).max(20),
@@ -81,7 +104,7 @@ export const runViewSchema = z.strictObject({
   status: z.enum(['active', 'finished']),
   failure: failureSchema.nullable(),
   state: cubeSchema,
-  scramble: z.string(),
+  scramble: z.string().nullable(),
   previous_accepted_moves: z.array(z.string()),
   move_count: z.number().int(),
   tool_call_count: z.number().int(),
@@ -111,9 +134,7 @@ export const runViewSchema = z.strictObject({
   finished_at: z.string().nullable(),
 });
 export type RunView = z.infer<typeof runViewSchema>;
-export const publicRunSchema = runViewSchema
-  .omit({ scramble: true })
-  .extend({ scramble: z.string().nullable() });
+export const publicRunSchema = runViewSchema;
 export const matchViewSchema = z.strictObject({
   match_id: z.string(),
   league: leagueSchema,
@@ -274,12 +295,12 @@ export const toolInputs = {
   }),
   cubebench_submit_solution: z.strictObject({
     ...runArgs,
-    sequence: z.string().max(60000),
+    sequence: z.string().max(100000),
     trusted_usage: trustedUsageSchema.optional(),
   }),
   cubebench_apply_moves: z.strictObject({
     ...runArgs,
-    sequence: z.string().min(1).max(256),
+    sequence: z.string().min(1).max(100000),
     trusted_usage: trustedUsageSchema.optional(),
   }),
   cubebench_get_run: z.strictObject(runArgs),
@@ -309,6 +330,7 @@ export const toolSuccessOutputs = {
   cubebench_list_formats: success({ formats }),
   cubebench_create_match: success({
     match_id: id,
+    spectator_url: z.url().nullable(),
     participants: z.array(
       z.strictObject({
         participant_id: id,
@@ -360,19 +382,19 @@ export const descriptions: Record<ToolName, string> = {
   cubebench_list_formats:
     'List versioned benchmark formats. Choose Sprint for one submission or Live for interactive batches.',
   cubebench_create_match:
-    'Create a fresh hidden-scramble match. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
+    'Create a fresh hidden-scramble match. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
   cubebench_start_run:
     'Redeem the one-use participant token with explicit match, participant and round IDs. Timer starts now. Save run_id and run_token; solve immediately using the league tool.',
   cubebench_submit_solution:
     'Sprint only. Submit your ONE complete legal move sequence. This ends the run even if invalid or unsolved. No retry or reset.',
   cubebench_apply_moves:
-    'Live only. Apply 1–12 legal moves in order. Timer includes reasoning and round trips. Repeat until the returned state is solved; invalid moves terminate the attempt.',
+    'Live only. Apply legal moves in order, up to the remaining match move budget. Timer includes reasoning and round trips. Visual playback may trail authoritative execution; invalid moves terminate the attempt.',
   cubebench_get_run:
     'Read your current state using explicit IDs and run token. Consumes a run tool call; the clock continues.',
   cubebench_abandon_run:
     'End your active attempt as abandoned. Cannot restart the same participant round.',
   cubebench_get_match:
-    'Read a public or owned match. Hidden round scrambles and competitor states are withheld until all entrants have started.',
+    'Read a public or owned match. Competitor state is withheld until all entrants start; generating scrambles remain hidden until every entrant in the round finishes.',
   cubebench_get_results:
     'Read complete signed JSON results for a match you own. Round seeds remain unavailable until the match completes.',
   cubebench_get_leaderboard:

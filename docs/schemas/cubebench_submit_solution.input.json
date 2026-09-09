@@ -24,7 +24,7 @@
     },
     "sequence": {
       "type": "string",
-      "maxLength": 60000
+      "maxLength": 100000
     },
     "trusted_usage": {
       "type": "object",

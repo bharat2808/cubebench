@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { SqliteRepository, type Actor } from '../packages/persistence/src/index.js';
-import { BenchmarkService } from '../packages/benchmark-core/src/index.js';
+import { BenchmarkService, type Run } from '../packages/benchmark-core/src/index.js';
 import {
   toolSuccessOutputs,
   errorSchema,
@@ -56,6 +56,8 @@ function enter(
   return { match, start, args };
 }
 const solution = (scramble: string) => serializeMoves(invertMoves(parseMoves(scramble, 3)));
+const runScramble = (s: ReturnType<typeof setup>, runId: string) =>
+  s.store.get<Run>('runs', runId)!.scramble;
 describe('benchmark acceptance', () => {
   it('conceals fresh scrambles and gives identical round state to every entrant', () => {
     const s = setup(),
@@ -73,7 +75,8 @@ describe('benchmark acceptance', () => {
       metadata: meta,
     });
     expect(b.run.state).toEqual(a.start.run.state);
-    expect(enter(s).start.run.scramble).not.toEqual(a.start.run.scramble);
+    const fresh = enter(s);
+    expect(runScramble(s, fresh.args.run_id)).not.toEqual(runScramble(s, a.args.run_id));
   });
   it('verifies Sprint once with authoritative elapsed time and immutable signature', () => {
     const s = setup(),
@@ -81,7 +84,7 @@ describe('benchmark acceptance', () => {
     s.tick(1234);
     const r = ok(s, 'cubebench_submit_solution', {
       ...a.args,
-      sequence: solution(a.start.run.scramble),
+      sequence: solution(runScramble(s, a.args.run_id)),
     });
     expect(r.result?.success).toBe(true);
     expect(r.result?.elapsed_ms).toBe(1234);
@@ -94,7 +97,7 @@ describe('benchmark acceptance', () => {
     ).toBe(false);
     expect(s.store.get('results', r.result!.result_id)).toEqual(r.result);
   });
-  it('Live enforces short batches, wrong-league isolation and records rejected attempts', () => {
+  it('Live accepts long batches while preserving wrong-league isolation', () => {
     const s = setup(),
       a = enter(s, 'live');
     expect(
@@ -102,16 +105,12 @@ describe('benchmark acceptance', () => {
         s.service.execute('cubebench_submit_solution', { ...a.args, sequence: 'R' }, actor),
       ).error.category,
     ).toBe('unauthorized');
-    expect(
-      errorSchema.parse(
-        s.service.execute(
-          'cubebench_apply_moves',
-          { ...a.args, sequence: Array(13).fill('R').join(' ') },
-          actor,
-        ),
-      ).ok,
-    ).toBe(false);
-    expect(ok(s, 'cubebench_get_run', a.args).run.failure).toBe('malformed_tool_arguments');
+    const batch = ok(s, 'cubebench_apply_moves', {
+      ...a.args,
+      sequence: Array(13).fill('R').join(' '),
+    });
+    expect(batch.accepted_moves).toHaveLength(13);
+    expect(ok(s, 'cubebench_get_run', a.args).run.failure).toBeNull();
   });
   it('never accepts community claims as a verified runner', () => {
     const s = setup();
@@ -127,7 +126,7 @@ describe('benchmark acceptance', () => {
     const a = enter(s);
     const r = ok(s, 'cubebench_submit_solution', {
       ...a.args,
-      sequence: solution(a.start.run.scramble),
+      sequence: solution(runScramble(s, a.args.run_id)),
     });
     expect(r.result?.verification).toBe('community');
     expect(

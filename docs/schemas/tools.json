@@ -290,7 +290,7 @@
     },
     {
       "name": "cubebench_create_match",
-      "description": "Create a fresh hidden-scramble match. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
+      "description": "Create a fresh hidden-scramble match. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -388,6 +388,17 @@
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
               },
+              "spectator_url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "participants": {
                 "type": "array",
                 "items": {
@@ -453,7 +464,7 @@
                 }
               }
             },
-            "required": ["ok", "match_id", "participants", "rounds"],
+            "required": ["ok", "match_id", "spectator_url", "participants", "rounds"],
             "additionalProperties": false
           },
           {
@@ -742,7 +753,14 @@
                     "additionalProperties": false
                   },
                   "scramble": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "previous_accepted_moves": {
                     "type": "array",
@@ -1113,7 +1131,7 @@
           },
           "sequence": {
             "type": "string",
-            "maxLength": 60000
+            "maxLength": 100000
           },
           "trusted_usage": {
             "type": "object",
@@ -1265,7 +1283,14 @@
                     "additionalProperties": false
                   },
                   "scramble": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "previous_accepted_moves": {
                     "type": "array",
@@ -2097,7 +2122,7 @@
     },
     {
       "name": "cubebench_apply_moves",
-      "description": "Live only. Apply 1–12 legal moves in order. Timer includes reasoning and round trips. Repeat until the returned state is solved; invalid moves terminate the attempt.",
+      "description": "Live only. Apply legal moves in order, up to the remaining match move budget. Timer includes reasoning and round trips. Visual playback may trail authoritative execution; invalid moves terminate the attempt.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -2125,7 +2150,7 @@
           "sequence": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 256
+            "maxLength": 100000
           },
           "trusted_usage": {
             "type": "object",
@@ -2277,7 +2302,14 @@
                     "additionalProperties": false
                   },
                   "scramble": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "previous_accepted_moves": {
                     "type": "array",
@@ -3263,7 +3295,14 @@
                     "additionalProperties": false
                   },
                   "scramble": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "previous_accepted_moves": {
                     "type": "array",
@@ -3728,7 +3767,14 @@
                     "additionalProperties": false
                   },
                   "scramble": {
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "previous_accepted_moves": {
                     "type": "array",
@@ -4039,7 +4085,7 @@
     },
     {
       "name": "cubebench_get_match",
-      "description": "Read a public or owned match. Hidden round scrambles and competitor states are withheld until all entrants have started.",
+      "description": "Read a public or owned match. Competitor state is withheld until all entrants start; generating scrambles remain hidden until every entrant in the round finishes.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -4289,6 +4335,16 @@
                           "required": ["size", "facelets"],
                           "additionalProperties": false
                         },
+                        "scramble": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "previous_accepted_moves": {
                           "type": "array",
                           "items": {
@@ -4523,16 +4579,6 @@
                               "type": "null"
                             }
                           ]
-                        },
-                        "scramble": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
                         }
                       },
                       "required": [
@@ -4545,6 +4591,7 @@
                         "status",
                         "failure",
                         "state",
+                        "scramble",
                         "previous_accepted_moves",
                         "move_count",
                         "tool_call_count",
@@ -4557,8 +4604,7 @@
                         "metadata",
                         "verification",
                         "started_at",
-                        "finished_at",
-                        "scramble"
+                        "finished_at"
                       ],
                       "additionalProperties": false
                     }

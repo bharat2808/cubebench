@@ -123,7 +123,14 @@
               "additionalProperties": false
             },
             "scramble": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "previous_accepted_moves": {
               "type": "array",

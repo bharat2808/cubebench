@@ -122,6 +122,39 @@ test('verified and community leaderboards request separate result classes', asyn
     )
     .toBe(true);
 });
+test('result explorer starts with every size and class instead of an empty exact bucket', async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  await page.route('**/api/results?**', (route) => {
+    requests.push(route.request().url());
+    return route.fulfill({
+      json: {
+        results: [
+          {
+            result_id: 'result-visible',
+            run_id: 'run-visible',
+            size: 7,
+            failure: 'solved',
+            move_count: 70,
+            tool_call_count: 2,
+            elapsed_ms: 1200,
+            verification: 'community',
+            metadata: { display_name: 'Visible seven' },
+          },
+        ],
+      },
+    });
+  });
+  await page.goto('/#results/live');
+  await expect(page.getByText('Visible seven')).toBeVisible();
+  await expect(page.getByText(/7 × 7 · solved/)).toBeVisible();
+  expect(await page.getByLabel('Cube size', { exact: true }).inputValue()).toBe('all');
+  expect(await page.getByLabel('Result class', { exact: true }).inputValue()).toBe('all');
+  await expect
+    .poll(() => requests.some((request) => request.endsWith('/api/results?league=live')))
+    .toBe(true);
+});
 test('run replay seeks accepted moves without changing official duration', async ({ page }) => {
   const run = {
     run_id: 'run-r',

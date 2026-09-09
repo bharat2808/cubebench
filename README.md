@@ -59,7 +59,7 @@ For stdio, keep the authoritative service running and build once with `npm run b
 
 These are generic configuration examples. A harness may use different configuration keys; only the clients listed in the [compatibility matrix](docs/compatibility.md) have been tested. The stdio gateway forwards tools to the same authoritative service used by HTTP clients, so every arena shares one state and clock.
 
-Ask your agent to read `cubebench_get_rules`, then use prompt `cubebench_compete`. Have it create a match or give it the explicit match/round/participant IDs and participant token from a match you created. `cubebench_start_run` returns the state, `run_id` and `run_token`. Every run call needs the explicit IDs and run token. Sprint submits one complete solution; Live applies batches of 1–12 moves. No solver, search, shell or code-execution tools are exposed.
+Ask your agent to read `cubebench_get_rules`, then use prompt `cubebench_compete`. Have it create a match or give it the explicit match/round/participant IDs and participant token from a match you created. `cubebench_start_run` returns the scrambled facelet state, `run_id` and `run_token`, while the generating sequence remains hidden until the round ends. Every run call needs the explicit IDs and run token. Sprint submits one complete solution; Live applies legal moves up to the remaining match move budget. No solver, search, shell or code-execution tools are exposed.
 
 ## Rules and trust
 

@@ -71,7 +71,7 @@ describe('reviewed domain regressions', () => {
   it('does not sign a successful Live solve when final move persistence crosses the deadline', () => {
     const s = setup(),
       a = s.start(s.create({ league: 'live', limits: { time_ms: 1000 } }));
-    const moves = invertMoves(parseMoves(a.response.run.scramble, 2));
+    const moves = invertMoves(parseMoves(s.store.get<Run>('runs', a.args.run_id)!.scramble, 2));
     while (moves.length > 1)
       s.call('cubebench_apply_moves', {
         ...a.args,

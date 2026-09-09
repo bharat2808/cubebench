@@ -49,23 +49,29 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 function useData<T>(path: string, initial: T) {
   const [data, setData] = useState(initial);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     let live = true;
+    setLoading(true);
     api<T>(path)
       .then((d) => {
         if (live) {
           setData(d);
           setError('');
+          setLoading(false);
         }
       })
       .catch((e) => {
-        if (live) setError(String(e.message));
+        if (live) {
+          setError(String(e.message));
+          setLoading(false);
+        }
       });
     return () => {
       live = false;
     };
   }, [path]);
-  return { data, error, setData };
+  return { data, error, loading, setData };
 }
 const time = (ms: number) => `${(ms / 1000).toFixed(2)}s`;
 function Size({ value, onChange }: { value: number; onChange: (n: number) => void }) {
@@ -174,9 +180,9 @@ function App() {
           ) : section === 'match' ? (
             <Match id={route.split('/')[1] || ''} />
           ) : section === 'results' ? (
-            <Results league={route.split('/')[1] || 'sprint'} />
+            <Results key={route} league={route.split('/')[1] || 'sprint'} />
           ) : section === 'leaderboard' ? (
-            <Leaderboard classification={route.split('/')[1] || 'verified'} />
+            <Leaderboard key={route} classification={route.split('/')[1] || 'verified'} />
           ) : section === 'run' ? (
             <Replay id={route.split('/')[1] || ''} />
           ) : section === 'settings' ? (
@@ -1085,10 +1091,13 @@ function Match({ id }: { id: string }) {
   );
 }
 function Results({ league }: { league: string }) {
-  const [size, setSize] = useState(3);
-  const [classification, setClassification] = useState('verified');
-  const { data, error } = useData<{ results: ResultRecord[] }>(
-    `/results?league=${league}&result_class=${classification}&size=${size}`,
+  const [size, setSize] = useState<number | 'all'>('all');
+  const [classification, setClassification] = useState<'verified' | 'community' | 'all'>('all');
+  const query = new URLSearchParams({ league });
+  if (size !== 'all') query.set('size', String(size));
+  if (classification !== 'all') query.set('result_class', classification);
+  const { data, error, loading } = useData<{ results: ResultRecord[] }>(
+    `/results?${query.toString()}`,
     { results: [] },
   );
   return (
@@ -1097,28 +1106,46 @@ function Results({ league }: { league: string }) {
       <h1>Every attempt tells a story.</h1>
       <p>Verified wall-clock duration includes reasoning and tool round trips.</p>
       <div className="filters">
-        <Size value={size} onChange={setSize} />
+        <label>
+          Cube size
+          <select
+            aria-label="Cube size"
+            value={size}
+            onChange={(e) => setSize(e.target.value === 'all' ? 'all' : +e.target.value)}
+          >
+            <option value="all">All sizes</option>
+            {sizes.map((n) => (
+              <option key={n} value={n}>
+                {n} × {n}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           Result class
           <select
             aria-label="Result class"
             value={classification}
-            onChange={(e) => setClassification(e.target.value)}
+            onChange={(e) => setClassification(e.target.value as 'verified' | 'community' | 'all')}
           >
             <option value="verified">Verified</option>
             <option value="community">Community</option>
+            <option value="all">All results</option>
           </select>
         </label>
       </div>
       <section className="panel">
         {error && <p className="error">{error}</p>}
-        {data.results.length ? (
+        {loading ? (
+          <Empty title="Loading results…" text="Reading completed signed attempts." />
+        ) : data.results.length ? (
           data.results.map((r) => (
             <a className="list-row" key={r.result_id} href={'#run/' + r.run_id}>
               <div>
                 <strong>{r.metadata.display_name}</strong>
                 <p>
-                  {r.failure} · {r.move_count} moves · {r.tool_call_count} calls
+                  {r.size} × {r.size} · {r.failure} · {r.move_count} moves · {r.tool_call_count}{' '}
+                  calls
                 </p>
               </div>
               <strong>{time(r.elapsed_ms)}</strong>
@@ -1144,8 +1171,8 @@ type BoardRow = {
 };
 function Leaderboard({ classification }: { classification: string }) {
   const [size, setSize] = useState(3);
-  const [league, setLeague] = useState('sprint');
-  const { data, error } = useData<{ rows: BoardRow[] }>(
+  const [league, setLeague] = useState(classification === 'community' ? 'live' : 'sprint');
+  const { data, error, loading } = useData<{ rows: BoardRow[] }>(
     `/leaderboard?league=${league}&result_class=${classification}&size=${size}`,
     { rows: [] },
   );
@@ -1170,7 +1197,9 @@ function Leaderboard({ classification }: { classification: string }) {
       </div>
       <section className="panel">
         {error && <p className="error">{error}</p>}
-        {!data.rows.length ? (
+        {loading ? (
+          <Empty title="Loading leaderboard…" text="Aggregating comparable completed runs." />
+        ) : !data.rows.length ? (
           <Empty
             title="An open field."
             text={`No ${classification} ${league} runs for this cube size yet.`}
@@ -1223,10 +1252,11 @@ function Replay({ id }: { id: string }) {
     const t = setTimeout(() => setIndex((i) => i + 1), 400);
     return () => clearTimeout(t);
   }, [paused, index, accepted.length]);
-  const initial = useMemo(
-    () => (run ? applyMoves(createSolved(run.size), run.scramble) : createSolved(3)),
-    [run],
-  );
+  const initial = useMemo(() => {
+    if (!run) return createSolved(3);
+    if (run.scramble) return applyMoves(createSolved(run.size), run.scramble);
+    return data.events.find((event) => event.type === 'run_started')?.state ?? run.state;
+  }, [run, data.events]);
   return (
     <>
       <div className="eyebrow">RUN REPLAY</div>
@@ -1275,7 +1305,7 @@ function Replay({ id }: { id: string }) {
           </p>
           <div className="scramble">
             <span>ORIGINAL SCRAMBLE</span>
-            <code>{run?.scramble}</code>
+            <code>{run?.scramble ?? 'Hidden until the round is complete'}</code>
           </div>
           <h3>Accepted sequence</h3>
           <code className="sequence">{accepted.join(' ') || 'No accepted moves'}</code>
@@ -1328,17 +1358,24 @@ function Guide() {
             </li>
             <li>
               <code>cubebench_create_match</code>
-              <p>Save the match and participant credentials.</p>
+              <p>
+                Save the match and participant credentials. Open the returned{' '}
+                <code>spectator_url</code> before starting when it is non-null and your harness can
+                show a live preview.
+              </p>
             </li>
             <li>
               <code>cubebench_start_run</code>
-              <p>Redeem a participant token. The official timer starts.</p>
+              <p>
+                Redeem a participant token. The official timer starts and the scrambled facelet
+                state is returned; the generating sequence stays hidden until the round ends.
+              </p>
             </li>
             <li>
               <code>cubebench_submit_solution</code>
               <p>Sprint: one submission ends the attempt.</p>
               <code>cubebench_apply_moves</code>
-              <p>Live: send 1–12 moves per batch until solved.</p>
+              <p>Live: send legal moves up to the remaining move budget. Playback queues them.</p>
             </li>
             <li>
               <code>cubebench_get_results</code>

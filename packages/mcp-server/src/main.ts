@@ -12,6 +12,7 @@ const list = (name: string) =>
 const store = new SqliteRepository(process.env.CUBEBENCH_DB ?? '.data/cubebench.sqlite');
 const service = new BenchmarkService(store, {
   signingKeyPath: process.env.CUBEBENCH_SIGNING_KEY ?? '.data/signing-key.pem',
+  publicUrl: process.env.CUBEBENCH_PUBLIC_URL,
 });
 service.recoverInterrupted();
 const { app, close } = createApp(service, store, {

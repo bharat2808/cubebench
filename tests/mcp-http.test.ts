@@ -10,7 +10,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { createServer, request as httpRequest, type Server } from 'node:http';
 import { createApp } from '../packages/mcp-server/src/index.ts';
 import { SqliteRepository, issueAccessToken } from '../packages/persistence/src/index.ts';
-import { BenchmarkService } from '../packages/benchmark-core/src/index.ts';
+import { BenchmarkService, type Run } from '../packages/benchmark-core/src/index.ts';
 import {
   TOOL_ORDER,
   toolSuccessOutputs,
@@ -22,7 +22,7 @@ afterEach(async () => {
 });
 async function setup(options: SecurityOptions = {}) {
   const store = new SqliteRepository(':memory:');
-  const service = new BenchmarkService(store);
+  const service = new BenchmarkService(store, { publicUrl: options.publicUrl });
   cleanup.push(
     () => store.close(),
     () => service.close(),
@@ -79,10 +79,64 @@ describe('authenticated MCP HTTP', () => {
       expect(
         tools.tools.every((t) => t.inputSchema.additionalProperties === false && t.outputSchema),
       ).toBe(true);
-      expect((await client.getPrompt({ name: 'cubebench_compete' })).messages.length).toBe(1);
+      const prompt = await client.getPrompt({ name: 'cubebench_compete' });
+      expect(prompt.messages).toHaveLength(1);
+      expect(prompt.description).toBe('CubeBench competition prompt v2.0.0');
+      const promptText = prompt.messages[0]?.content;
+      expect(promptText?.type).toBe('text');
+      if (promptText?.type !== 'text') throw new Error('Expected text competition prompt');
+      expect(promptText.text).toContain('spectator_url');
+      expect(promptText.text.indexOf('spectator_url')).toBeLessThan(
+        promptText.text.indexOf('cubebench_start_run'),
+      );
       const rules = await client.callTool({ name: 'cubebench_get_rules', arguments: {} });
-      expect((rules.structuredContent as { ok: boolean })?.ok).toBe(true);
+      const parsedRules = toolSuccessOutputs.cubebench_get_rules.parse(rules.structuredContent);
+      expect(parsedRules.versions.schema).toBe('2.0.0');
+      expect(parsedRules.versions.prompt).toBe('2.0.0');
     });
+
+  it('returns a canonical spectator URL while the created match is still waiting', async () => {
+    const publicUrl = 'https://cubebench.example.test';
+    const { url, store } = await setup({ publicUrl });
+    const { token } = issueAccessToken(store, 'preview fixture');
+    const client = new Client({ name: 'preview-fixture', version: '1' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(url + '/mcp'), {
+        requestInit: { headers: { Authorization: `Bearer ${token}` } },
+      }),
+    );
+    cleanup.push(() => client.close());
+
+    const response = await client.callTool({
+      name: 'cubebench_create_match',
+      arguments: { league: 'live', size: 3 },
+    });
+    const match = toolSuccessOutputs.cubebench_create_match.parse(response.structuredContent);
+
+    expect(match.spectator_url).toBe(`${publicUrl}/#match/${match.match_id}`);
+    const waiting = await (await fetch(url + `/api/matches/${match.match_id}`)).json();
+    expect(waiting.match.status).toBe('waiting');
+    expect(waiting.match.runs).toEqual([]);
+
+    const privateResponse = await client.callTool({
+      name: 'cubebench_create_match',
+      arguments: { league: 'live', size: 3, visibility: 'private' },
+    });
+    const privateMatch = toolSuccessOutputs.cubebench_create_match.parse(
+      privateResponse.structuredContent,
+    );
+    expect(privateMatch.spectator_url).toBeNull();
+  });
+
+  it.each([
+    'ftp://cubebench.example.test',
+    'https://user:secret@cubebench.example.test',
+    'https://cubebench.example.test/path',
+    'https://cubebench.example.test?source=bad',
+    'https://cubebench.example.test/#old',
+  ])('rejects an unsafe public URL configuration: %s', async (publicUrl) => {
+    await expect(setup({ publicUrl })).rejects.toThrow('public URL');
+  });
   it('blocks browser mutations without same origin header and oversize bodies', async () => {
     const { url } = await setup();
     expect(
@@ -106,7 +160,7 @@ describe('authenticated MCP HTTP', () => {
   });
 });
 
-async function compete(client: Client, league: 'sprint' | 'live') {
+async function compete(client: Client, store: SqliteRepository, league: 'sprint' | 'live') {
   const call = async <N extends ToolName>(name: N, args: Record<string, unknown>) => {
     const result = await client.callTool({ name, arguments: args });
     return toolSuccessOutputs[name].parse(result.structuredContent) as z.output<
@@ -131,7 +185,8 @@ async function compete(client: Client, league: 'sprint' | 'live') {
     run_id: started.run.run_id,
     run_token: started.run_token,
   };
-  const moves = invertMoves(parseMoves(started.run.scramble, 3));
+  expect(started.run.scramble).toBeNull();
+  const moves = invertMoves(parseMoves(store.get<Run>('runs', started.run.run_id)!.scramble, 3));
   if (league === 'sprint') {
     const result = await call('cubebench_submit_solution', {
       ...args,
@@ -139,13 +194,11 @@ async function compete(client: Client, league: 'sprint' | 'live') {
     });
     expect('result' in result && result.result?.success).toBe(true);
   } else {
-    for (let i = 0; i < moves.length; i += 12) {
-      const result = await call('cubebench_apply_moves', {
-        ...args,
-        sequence: serializeMoves(moves.slice(i, i + 12)),
-      });
-      if (i + 12 >= moves.length) expect('result' in result && result.result?.success).toBe(true);
-    }
+    const result = await call('cubebench_apply_moves', {
+      ...args,
+      sequence: serializeMoves(moves),
+    });
+    expect('result' in result && result.result?.success).toBe(true);
   }
   const results = await call('cubebench_get_results', { match_id: match.match_id });
   expect('results' in results && results.results.length).toBe(1);
@@ -167,9 +220,11 @@ describe('end-to-end competition transports', () => {
           }),
         );
         cleanup.push(() => client.close());
-        const id = await compete(client, league);
+        const id = await compete(client, store, league);
         const events = await (await fetch(url + `/api/matches/${id}/events`)).json();
         expect(events.events.some((e: { type: string }) => e.type === 'cube_solved')).toBe(true);
+        const aggregate = await (await fetch(url + `/api/results?league=${league}`)).json();
+        expect(aggregate.results).toHaveLength(1);
       });
   for (const mode of ['legacy', 'auto'] as const)
     it(`completes both leagues through ${mode} stdio sharing HTTP authority`, async () => {
@@ -195,8 +250,8 @@ describe('end-to-end competition transports', () => {
       );
       cleanup.push(() => client.close());
       await client.listTools();
-      await compete(client, 'sprint');
-      await compete(client, 'live');
+      await compete(client, store, 'sprint');
+      await compete(client, store, 'live');
       expect(store.list('results')).toHaveLength(2);
     }, 20000);
   it('isolates private browser matches and human solve history', async () => {
@@ -328,7 +383,7 @@ describe('OAuth and durable browser transport', () => {
       }),
     );
     cleanup.push(() => client.close());
-    const id = await compete(client, 'sprint');
+    const id = await compete(client, store, 'sprint');
     const replay = await (await fetch(url + `/api/matches/${id}/events`)).json();
     const controller = new AbortController();
     const response = await fetch(url + `/api/matches/${id}/stream`, {

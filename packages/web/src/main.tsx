@@ -893,6 +893,8 @@ function Create() {
 }
 function useEvents(id: string) {
   const [events, setEvents] = useState<CubeEvent[]>([]);
+  const [liveEvents, setLiveEvents] = useState<CubeEvent[]>([]);
+  const [baseStates, setBaseStates] = useState<Record<string, CubeState>>({});
   const [connection, setConnection] = useState('Connecting');
   useEffect(() => {
     let stopped = false;
@@ -909,6 +911,11 @@ function useEvents(id: string) {
       .then((history) => {
         if (stopped) return;
         merge(history.events);
+        const snapshots: Record<string, CubeState> = {};
+        for (const event of history.events) {
+          if (event.run_id && event.state) snapshots[event.run_id] = event.state as CubeState;
+        }
+        setBaseStates(snapshots);
         cursor = history.cursor;
         const connect = () => {
           if (stopped) return;
@@ -921,6 +928,13 @@ function useEvents(id: string) {
               const incoming = JSON.parse(event.data) as CubeEvent;
               cursor = Math.max(cursor, incoming.id);
               merge([incoming]);
+              setLiveEvents((old) => [...old, incoming]);
+              if (incoming.type === 'run_started' && incoming.run_id && incoming.state) {
+                setBaseStates((old) => ({
+                  ...old,
+                  [incoming.run_id!]: incoming.state as CubeState,
+                }));
+              }
             } catch {
               setConnection('Invalid event');
             }
@@ -942,15 +956,13 @@ function useEvents(id: string) {
       socket?.close();
     };
   }, [id]);
-  return { events, connection };
+  return { events, liveEvents, baseStates, connection };
 }
 function Match({ id }: { id: string }) {
   const { data, error, setData } = useData<{ match: MatchView | null }>('/matches/' + id, {
     match: null,
   });
-  const { events, connection } = useEvents(id);
-  const [visualPause, setVisualPause] = useState(false);
-  const [seek, setSeek] = useState<number | null>(null);
+  const { events, liveEvents, baseStates, connection } = useEvents(id);
   const [selectedRun, setSelectedRun] = useState('');
   useEffect(() => {
     if (!events.length) return;
@@ -975,7 +987,7 @@ function Match({ id }: { id: string }) {
     const timer = setInterval(() => setDisplayNow(performance.now()), 100);
     return () => clearInterval(timer);
   }, [hasActiveRuns]);
-  const visible = events.slice(0, seek ?? events.length);
+  const visible = events;
   const runId = selectedRun || match?.runs[0]?.run_id || events.find((e) => e.run_id)?.run_id;
   const runEvents = visible.filter((e) => e.run_id === runId);
   const selected = match?.runs.find((run) => run.run_id === runId);
@@ -984,12 +996,12 @@ function Match({ id }: { id: string }) {
     runEvents.find((e) => e.type === 'run_started' && e.state)?.state ||
     runEvents.find((e) => e.state)?.state;
   const state = completed ? selected?.state : liveState;
-  const moves = completed
-    ? ''
-    : runEvents
-        .filter((e) => e.type === 'move_accepted' && e.move)
-        .map((e) => e.move!)
-        .join(' ');
+  const latestState = runEvents.filter((event) => event.state).at(-1)?.state;
+  const liveMoves = liveEvents
+    .filter((event) => event.run_id === runId && event.type === 'move_accepted' && event.move)
+    .map((event) => event.move!)
+    .join(' ');
+  const playbackState = (runId && baseStates[runId]) || latestState || state;
   return (
     <>
       <div className="eyebrow">
@@ -999,16 +1011,16 @@ function Match({ id }: { id: string }) {
       <p>
         {completed
           ? 'Match complete. Showing the final committed cube state; open a run to replay its moves.'
-          : 'Official clocks keep running while visual playback is paused.'}
+          : 'Showing the latest committed cube state as moves arrive.'}
       </p>
       {error && <p className="error">{error}</p>}
       <div className="workshop">
         <section className="panel stage">
-          {state ? (
+          {state && playbackState ? (
             <Cube
-              initial={state as CubeState}
-              moves={parseMoves(moves, state.size)}
-              paused={visualPause}
+              initial={playbackState as CubeState}
+              moves={completed ? [] : parseMoves(liveMoves, playbackState.size)}
+              speed={180}
             />
           ) : (
             <Empty
@@ -1019,23 +1031,7 @@ function Match({ id }: { id: string }) {
           <div className="playback">
             {!completed && (
               <>
-                <button className="button" onClick={() => setVisualPause(!visualPause)}>
-                  {visualPause ? 'Resume playback' : 'Pause playback'}
-                </button>
-                <label>
-                  Event playback
-                  <input
-                    aria-label="Event playback"
-                    type="range"
-                    min="0"
-                    max={events.length}
-                    value={seek ?? events.length}
-                    onChange={(e) => setSeek(+e.target.value)}
-                  />
-                </label>
-                <button className="text-button" onClick={() => setSeek(null)}>
-                  Jump to live
-                </button>
+                <span className="pill">Live state</span>
               </>
             )}
           </div>
@@ -1050,7 +1046,6 @@ function Match({ id }: { id: string }) {
               value={runId || ''}
               onChange={(e) => {
                 setSelectedRun(e.target.value);
-                setSeek(null);
               }}
             >
               {match?.runs.map((r) => (

@@ -206,14 +206,15 @@ export class CubeBenchArena extends DurableObject<Env> {
       );
       if (!Number.isInteger(cursor) || cursor < 0)
         return json({ error: 'Invalid cursor' }, { status: 400 });
+      const visibleEvents = this.service.getEvents(
+        events[1]!,
+        cursor,
+        actor ?? this.browser(request, headers),
+      );
       return json(
         {
-          events: this.service.getEvents(
-            events[1]!,
-            cursor,
-            actor ?? this.browser(request, headers),
-          ),
-          cursor,
+          events: visibleEvents,
+          cursor: visibleEvents.at(-1)?.id ?? cursor,
         },
         { headers },
       );

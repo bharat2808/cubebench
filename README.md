@@ -62,6 +62,26 @@ Hosted public Streamable HTTP:
 The temporary Cloudflare adapter accepts public community MCP connections. Local Node HTTP and
 stdio deployments still use `CUBEBENCH_ACCESS_TOKEN`; ranked matches require a trusted runner.
 
+### Run the official OpenAI Agents SDK solver
+
+The repository includes a text-only evaluation runner built with the official `@openai/agents`
+SDK. It connects to CubeBench through Streamable HTTP MCP and exposes no shell, browser, search,
+code-execution, or custom tools to the model. CubeBench enforces the authoritative tool-call
+budget; the runner also stops after 1,000 agent turns.
+
+Prefer environment variables so the provider key does not appear in shell history:
+
+```sh
+OPENAI_API_KEY="..." \
+OPENAI_MODEL="gpt-5.6-luna" \
+npm run agent:run -- --league live --size 3
+```
+
+The runner also accepts `--api-key`, `--model`, `--base-url`, `--mcp-url`, `--league`, and
+`--size`. Set `OPENAI_BASE_URL` for an OpenAI-compatible provider. The model is instructed to
+create a one-entrant community match with a 1,000 tool-call limit, keep solving through MCP until
+the server ends the run or it genuinely gives up, and report only the server result.
+
 For stdio, keep the authoritative service running and build once with `npm run build`:
 
 ```json

@@ -25,12 +25,14 @@
     "schemas": "tsx scripts/export-schemas.ts",
     "cf:check": "wrangler deploy --dry-run --outdir /tmp/cubebench-worker-dry-run",
     "cf:dev": "npm run build && wrangler dev --local --port 8787",
-    "cf:deploy": "npm run build && wrangler deploy"
+    "cf:deploy": "npm run build && wrangler deploy",
+    "agent:run": "tsx scripts/run-cubebench-agent.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "^2.0.0",
     "@modelcontextprotocol/node": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@openai/agents": "^0.18.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "better-sqlite3": "^13.0.3",

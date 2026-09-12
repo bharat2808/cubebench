@@ -130,8 +130,21 @@ function Empty({
 }
 function App() {
   const [route, setRoute] = useState(location.hash.slice(1) || 'arena');
-  const [contrast, setContrast] = useState(false);
+  const [contrast, setContrast] = useState(() => {
+    try {
+      return localStorage.getItem('cubebench-contrast') === 'on';
+    } catch {
+      return false;
+    }
+  });
   const hosted = !['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+  useEffect(() => {
+    try {
+      localStorage.setItem('cubebench-contrast', contrast ? 'on' : 'off');
+    } catch {
+      // Preferences are optional when storage is unavailable or blocked.
+    }
+  }, [contrast]);
   useEffect(() => {
     const fn = () => setRoute(location.hash.slice(1) || 'arena');
     window.addEventListener('hashchange', fn);
@@ -186,14 +199,14 @@ function App() {
             </span>
           </div>
           <div className="header-tools">
-            <button
-              className="text-button"
-              aria-label="Toggle high contrast"
-              aria-pressed={contrast}
-              onClick={() => setContrast(!contrast)}
+            <a
+              className="header-link"
+              href="https://github.com/bharat2808/rubiks-cube-bench"
+              target="_blank"
+              rel="noreferrer"
             >
-              Contrast
-            </button>
+              GitHub ↗
+            </a>
             <a href="#guide" className="header-link">
               <span className="engine-dot" /> MCP ready <ArrowUpRight size={14} />
             </a>
@@ -224,7 +237,12 @@ function App() {
           <span>
             CubeBench <span className="muted">/</span> A clearer measure of reasoning.
           </span>
-          <span>ENGINE v1.0 · 2–7 LAYERS</span>
+          <span>
+            <a href="https://github.com/bharat2808/rubiks-cube-bench" target="_blank" rel="noreferrer">
+              GitHub ↗
+            </a>{' '}
+            <span className="muted">·</span> ENGINE v1.0 · 2–7 LAYERS
+          </span>
         </footer>
       </main>
     </div>

@@ -2,6 +2,16 @@
 
 A provider-neutral Rubik's Cube benchmark arena and human-solving workshop. External agent harnesses connect over MCP; CubeBench owns the deterministic cube, timing, rules and signed results. It never calls model APIs or stores model-provider keys.
 
+## See it in action
+
+CubeBench combines a visual arena for watching benchmark runs, a hands-on workshop for human practice, and an MCP guide for connecting your own reasoning harness:
+
+![CubeBench arena](docs/screenshots/arena.png)
+
+![Human solving workshop](docs/screenshots/human-workshop.png)
+
+![MCP connection guide](docs/screenshots/mcp-guide.png)
+
 ## Quick start
 
 Requires Node **22.12+** and npm. All commands below run from this directory, independently of adjacent projects.
@@ -47,7 +57,7 @@ For stdio, keep the authoritative service running and build once with `npm run b
   "mcpServers": {
     "cubebench": {
       "command": "node",
-      "args": ["/Users/home/Documents/storefront/rubiks-cube-bench/dist/server/stdio.js"],
+      "args": ["./dist/server/stdio.js"],
       "env": {
         "CUBEBENCH_URL": "http://127.0.0.1:4310",
         "CUBEBENCH_TOKEN": "<CUBEBENCH_ACCESS_TOKEN>"

@@ -34,6 +34,36 @@ function option(args: string[], name: string): string | undefined {
   return index < 0 ? undefined : args[index + 1];
 }
 
+const SENSITIVE_KEYS = new Set([
+  'api_key',
+  'authorization',
+  'participant_token',
+  'run_token',
+  'token',
+]);
+
+function safeLog(value: unknown): string {
+  let parsed = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value) as unknown;
+    } catch {
+      return value;
+    }
+  }
+  const redact = (current: unknown): unknown => {
+    if (Array.isArray(current)) return current.map(redact);
+    if (!current || typeof current !== 'object') return current;
+    return Object.fromEntries(
+      Object.entries(current).map(([key, nested]) => [
+        key,
+        SENSITIVE_KEYS.has(key.toLowerCase()) ? '[redacted]' : redact(nested),
+      ]),
+    );
+  };
+  return JSON.stringify(redact(parsed));
+}
+
 function parseOptions(): Options {
   const args = process.argv.slice(2);
   const apiKey = option(args, '--api-key') ?? process.env.OPENAI_API_KEY;
@@ -61,6 +91,9 @@ function parseOptions(): Options {
 }
 
 const options = parseOptions();
+const providerId = new URL(options.baseUrl).hostname.includes('openrouter')
+  ? 'openrouter'
+  : new URL(options.baseUrl).hostname;
 const provider = new OpenAIProvider({
   apiKey: options.apiKey,
   baseURL: options.baseUrl,
@@ -81,6 +114,12 @@ const agent = new Agent({
   name: 'CubeBench text-only solver',
   model,
   instructions: `You are a text-only Rubik's Cube solver being benchmarked.
+
+Identity for this run: provider=${JSON.stringify(providerId)}, model_id=${JSON.stringify(options.model)}.
+You are not Claude, Opus, GPT, or any other model unless that exact model ID says so. Do not
+guess or substitute a model identity. Use exactly these values in cubebench_start_run metadata:
+model_id=${JSON.stringify(options.model)}, claimed_provider=${JSON.stringify(providerId)},
+claimed_model=${JSON.stringify(options.model)}.
 
 Use only the connected CubeBench MCP tools. You have no shell, browser, code execution, search,
 reset, hint, or custom tools. Do not solve the cube outside the MCP protocol or invent tool results.
@@ -106,8 +145,30 @@ try {
   await mcp.connect();
   console.error(`Connecting to CubeBench MCP: ${options.mcpUrl}`);
   console.error(`Running model ${options.model} with a ${MAX_TOOL_CALLS}-call CubeBench budget.`);
-  const result = await runner.run(agent, prompt, { maxTurns: MAX_TOOL_CALLS });
-  console.log(result.finalOutput);
+  const result = await runner.run(agent, prompt, { maxTurns: MAX_TOOL_CALLS, stream: true });
+  for await (const event of result) {
+    if (event.type !== 'run_item_stream_event') continue;
+    const item = event.item as unknown as {
+      rawItem?: { name?: string; arguments?: string };
+      output?: unknown;
+    };
+    if (event.name === 'tool_called') {
+      console.error(`[tool call] ${item.rawItem?.name ?? 'unknown'} ${safeLog(item.rawItem?.arguments ?? {})}`);
+    } else if (event.name === 'tool_output') {
+      console.error(`[tool result] ${safeLog(item.output)}`);
+    } else if (event.name === 'message_output_created') {
+      const message = item.rawItem as unknown as { content?: Array<{ type?: string; text?: string }> };
+      const text = message.content
+        ?.filter((part) => part.type === 'output_text' && part.text)
+        .map((part) => part.text)
+        .join(' ');
+      if (text) console.error(`[model] ${text}`);
+    } else if (event.name === 'reasoning_item_created') {
+      // The SDK may expose private reasoning events; do not print hidden chain-of-thought.
+      console.error('[model] reasoning update received');
+    }
+  }
+  console.log(result.finalOutput ?? '[agent ended without final output]');
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`Agent run ended: ${message}`);

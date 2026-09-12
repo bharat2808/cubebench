@@ -83,6 +83,9 @@ create a one-entrant community match with a 1,000 tool-call limit, keep solving 
 the server ends the run or it genuinely gives up, extend its community timeout when needed up to
 one hour, and report only the server result.
 
+The runner streams model-visible messages, MCP tool calls, and redacted MCP results to the terminal
+while it runs. Private API and run tokens are not printed; hidden chain-of-thought is not exposed.
+
 For stdio, keep the authoritative service running and build once with `npm run build`:
 
 ```json

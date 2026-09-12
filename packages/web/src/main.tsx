@@ -1302,6 +1302,7 @@ function Replay({ id }: { id: string }) {
           <Cube
             initial={initial}
             moves={parseMoves(accepted.slice(0, index).join(' '), initial.size)}
+            animate={!paused}
           />
           <div className="playback">
             <button className="button" onClick={() => setPaused(!paused)}>

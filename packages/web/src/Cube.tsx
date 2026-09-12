@@ -182,6 +182,7 @@ export function Cube({
   moves = [],
   speed = 220,
   paused = false,
+  animate = true,
   labels = false,
   onTurn,
 }: {
@@ -189,6 +190,7 @@ export function Cube({
   moves?: Move[];
   speed?: number;
   paused?: boolean;
+  animate?: boolean;
   labels?: boolean;
   onTurn?: (face: string) => void;
 }) {
@@ -205,14 +207,20 @@ export function Cube({
     progress.current = 0;
   }, [initial]);
   useEffect(() => {
+    if (!animate && index !== moves.length) {
+      setState(applyMoves(initial, moves));
+      setIndex(moves.length);
+      progress.current = 0;
+      return;
+    }
     if (index > moves.length) {
       setState(applyMoves(initial, moves));
       setIndex(moves.length);
       progress.current = 0;
     }
-  }, [moves, index, initial]);
+  }, [animate, moves, index, initial]);
   useEffect(() => {
-    if (paused || index >= moves.length) return;
+    if (!animate || paused || index >= moves.length) return;
     let prev = performance.now();
     let raf = 0;
     const frame = (now: number) => {
@@ -226,7 +234,7 @@ export function Cube({
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [moves, index, speed, paused, reduced]);
+  }, [animate, moves, index, speed, paused, reduced]);
   const fallback = <CubeFallback state={applyMoves(initial, moves)} onTurn={onTurn} />;
   if (!webGL || contextLost) return fallback;
   return (

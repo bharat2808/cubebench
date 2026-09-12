@@ -8,6 +8,9 @@ test-results/
 playwright-report/
 coverage/
 .superpowers/
+.dev.vars
+.wrangler/
+.playwright-cli/
 
 .cache/
 docs/schemas/cubebench_start_run.input.json

@@ -339,7 +339,10 @@ function Arena() {
         <Terminal />
         <div>
           <h3>Bring your own intelligence.</h3>
-          <p>Connect any compatible MCP harness. You own the model, prompt, and credentials.</p>
+          <p>
+            Connect any compatible MCP harness. The hosted community endpoint is open; you bring the
+            model and prompt.
+          </p>
         </div>
         <a href="#guide" className="button">
           Read the MCP guide <ArrowUpRight size={16} />
@@ -860,8 +863,9 @@ function Create() {
                 Open match <ArrowRight size={16} />
               </a>
               <p>
-                Copy these participant credentials into your runner. They are shown only here and
-                are never stored in the browser. Each token starts one entrant round.
+                Copy these participant credentials into the clients you want to compare. They are
+                shown only here and are never stored in the browser. Each token starts one entrant
+                round.
               </p>
               <pre aria-label="Participant credentials">{JSON.stringify(created, null, 2)}</pre>
             </>
@@ -873,8 +877,8 @@ function Create() {
               </p>
               <ol className="steps">
                 <li>Create your match</li>
-                <li>Give each runner its participant token</li>
-                <li>Start runs through MCP</li>
+                <li>Give each client its participant token</li>
+                <li>Open the spectator preview and start runs through MCP</li>
                 <li>Review signed results</li>
               </ol>
               <a href="#guide" className="text-link">
@@ -956,20 +960,29 @@ function Match({ id }: { id: string }) {
   const visible = events.slice(0, seek ?? events.length);
   const runId = selectedRun || match?.runs[0]?.run_id || events.find((e) => e.run_id)?.run_id;
   const runEvents = visible.filter((e) => e.run_id === runId);
-  const state =
+  const selected = match?.runs.find((run) => run.run_id === runId);
+  const completed = match?.status === 'completed';
+  const liveState =
     runEvents.find((e) => e.type === 'run_started' && e.state)?.state ||
     runEvents.find((e) => e.state)?.state;
-  const moves = runEvents
-    .filter((e) => e.type === 'move_accepted' && e.move)
-    .map((e) => e.move!)
-    .join(' ');
+  const state = completed ? selected?.state : liveState;
+  const moves = completed
+    ? ''
+    : runEvents
+        .filter((e) => e.type === 'move_accepted' && e.move)
+        .map((e) => e.move!)
+        .join(' ');
   return (
     <>
       <div className="eyebrow">
         MATCH SPECTATOR <span className="pill">{connection}</span>
       </div>
       <h1>{match?.league === 'live' ? 'Live' : 'Sprint'} in the arena.</h1>
-      <p>Official clocks keep running while visual playback is paused.</p>
+      <p>
+        {completed
+          ? 'Match complete. Showing the final committed cube state; open a run to replay its moves.'
+          : 'Official clocks keep running while visual playback is paused.'}
+      </p>
       {error && <p className="error">{error}</p>}
       <div className="workshop">
         <section className="panel stage">
@@ -986,23 +999,27 @@ function Match({ id }: { id: string }) {
             />
           )}
           <div className="playback">
-            <button className="button" onClick={() => setVisualPause(!visualPause)}>
-              {visualPause ? 'Resume playback' : 'Pause playback'}
-            </button>
-            <label>
-              Event playback
-              <input
-                aria-label="Event playback"
-                type="range"
-                min="0"
-                max={events.length}
-                value={seek ?? events.length}
-                onChange={(e) => setSeek(+e.target.value)}
-              />
-            </label>
-            <button className="text-button" onClick={() => setSeek(null)}>
-              Jump to live
-            </button>
+            {!completed && (
+              <>
+                <button className="button" onClick={() => setVisualPause(!visualPause)}>
+                  {visualPause ? 'Resume playback' : 'Pause playback'}
+                </button>
+                <label>
+                  Event playback
+                  <input
+                    aria-label="Event playback"
+                    type="range"
+                    min="0"
+                    max={events.length}
+                    value={seek ?? events.length}
+                    onChange={(e) => setSeek(+e.target.value)}
+                  />
+                </label>
+                <button className="text-button" onClick={() => setSeek(null)}>
+                  Jump to live
+                </button>
+              </>
+            )}
           </div>
         </section>
         <section className="panel controls">
@@ -1329,14 +1346,13 @@ function Guide() {
         <section className="panel controls">
           <h2>01 / Connect your harness</h2>
           <p>
-            Point a Streamable HTTP MCP client at this server. Send a locally issued runner bearer
-            token in the Authorization header.
+            Point a Streamable HTTP MCP client at this server. Hosted community access is public, so
+            no bearer token is required to connect.
           </p>
           <pre>
             {JSON.stringify(
               {
                 url: location.origin + '/mcp',
-                headers: { Authorization: 'Bearer <runner-token>' },
               },
               null,
               2,
@@ -1344,7 +1360,7 @@ function Guide() {
           </pre>
           <p>
             For local stdio clients, use the gateway with CUBEBENCH_URL and CUBEBENCH_TOKEN in the
-            harness environment.
+            harness environment. Local authoritative mode still uses access credentials.
           </p>
           <pre>npm run mcp:stdio</pre>
           <p>Provider credentials stay in your harness. CubeBench never calls a model API.</p>
@@ -1360,8 +1376,8 @@ function Guide() {
               <code>cubebench_create_match</code>
               <p>
                 Save the match and participant credentials. Open the returned{' '}
-                <code>spectator_url</code> before starting when it is non-null and your harness can
-                show a live preview.
+                <code>spectator_url</code> in a browser before starting. Share that preview URL with
+                observers or keep it open while multiple clients run the same round.
               </p>
             </li>
             <li>
@@ -1384,6 +1400,20 @@ function Guide() {
           </ol>
         </section>
       </div>
+      <section className="panel controls">
+        <h2>Previewing multiple clients</h2>
+        <p>
+          Create one entrant per client. Every participant token is single-use and bound to its
+          entrant and round, while all entrants receive the same scramble. Start each client with
+          its own token, then watch the shared <code>spectator_url</code>: the board shows committed
+          moves, run status, timing, and standings as they arrive.
+        </p>
+        <p>
+          The preview is for observation only. Pausing or seeking the animation never changes the
+          official timer or benchmark state, and the scramble remains hidden until the round’s
+          visibility rules allow it.
+        </p>
+      </section>
       <section className="panel controls">
         <h2>Equal conditions, explicit limits.</h2>
         <p>
@@ -1411,7 +1441,7 @@ function SettingsPage() {
     <>
       <div className="eyebrow">RUNNER SETTINGS</div>
       <h1>Your harness. Your control.</h1>
-      <p>Inspect the server connection and configure credentials outside the browser.</p>
+      <p>Inspect the public community endpoint and verify results outside the browser.</p>
       <div className="workshop">
         <section className="panel controls">
           <h2>Connection</h2>
@@ -1420,7 +1450,7 @@ function SettingsPage() {
             MCP endpoint
             <input readOnly value={data.mcp_url || location.origin + '/mcp'} />
           </label>
-          <p>Hosted OAuth: {data.oauth_enabled ? 'enabled' : 'disabled'}</p>
+          <p>Hosted community MCP: public · OAuth: {data.oauth_enabled ? 'enabled' : 'disabled'}</p>
           <h3>Provision a local runner</h3>
           <pre>npm run auth:issue -- --name my-runner --role runner</pre>
           <p>

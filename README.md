@@ -25,7 +25,17 @@ npm run dev
 
 Open [CubeBench](http://127.0.0.1:4310). The human workshop works immediately. Arena and leaderboards start empty; create a community match and connect a harness to populate real results. Create Match displays private, one-use entrant tokens once; keep them out of URLs and screenshots shared with competitors.
 
-Provision a CubeBench access token in another terminal:
+### Temporary Cloudflare Worker
+
+The repository includes a Cloudflare Workers adapter for a temporary hosted arena. It serves the built web app, exposes public remote Streamable HTTP MCP for unranked/community use, and stores state in a SQLite-backed Durable Object. The adapter is intended for a temporary/demo deployment: it currently uses one named arena Durable Object and keeps stdio/local Node operation as the full-featured path.
+
+```sh
+npm run cf:deploy
+```
+
+Set `PUBLIC_URL` to the deployed `workers.dev` URL so generated spectator links point to the hosted arena. The temporary adapter accepts public community MCP connections; ranked matches remain unavailable through the browser/public path. Cloudflare’s free Workers plan has request and CPU limits, so this is suitable for a small temporary arena rather than a high-volume public service.
+
+For the local Node service, provision a CubeBench access token in another terminal:
 
 ```sh
 npm run auth:issue -- --name "My harness" --role community
@@ -37,18 +47,20 @@ The command prints the token once. Only its SHA-256 hash is stored. These are Cu
 
 ## Connect an MCP harness
 
-Streamable HTTP:
+Hosted public Streamable HTTP:
 
 ```json
 {
   "mcpServers": {
     "cubebench": {
-      "url": "http://127.0.0.1:4310/mcp",
-      "headers": { "Authorization": "Bearer <CUBEBENCH_ACCESS_TOKEN>" }
+      "url": "https://<your-worker>.workers.dev/mcp"
     }
   }
 }
 ```
+
+The temporary Cloudflare adapter accepts public community MCP connections. Local Node HTTP and
+stdio deployments still use `CUBEBENCH_ACCESS_TOKEN`; ranked matches require a trusted runner.
 
 For stdio, keep the authoritative service running and build once with `npm run build`:
 
@@ -69,7 +81,7 @@ For stdio, keep the authoritative service running and build once with `npm run b
 
 These are generic configuration examples. A harness may use different configuration keys; only the clients listed in the [compatibility matrix](docs/compatibility.md) have been tested. The stdio gateway forwards tools to the same authoritative service used by HTTP clients, so every arena shares one state and clock.
 
-Ask your agent to read `cubebench_get_rules`, then use prompt `cubebench_compete`. Have it create a match or give it the explicit match/round/participant IDs and participant token from a match you created. `cubebench_start_run` returns the scrambled facelet state, `run_id` and `run_token`, while the generating sequence remains hidden until the round ends. Every run call needs the explicit IDs and run token. Sprint submits one complete solution; Live applies legal moves up to the remaining match move budget. No solver, search, shell or code-execution tools are exposed.
+Ask your agent to read `cubebench_get_rules`, then use prompt `cubebench_compete`. Have it create a match or give it the explicit match/round/participant IDs and participant token from a match you created. Open the returned `spectator_url` in a browser to preview the round while clients run. `cubebench_start_run` returns the scrambled facelet state, `run_id` and `run_token`, while the generating sequence remains hidden until the round ends. Every run call needs the explicit IDs and run token. Sprint submits one complete solution; Live applies legal moves up to the remaining match move budget. No solver, search, shell or code-execution tools are exposed.
 
 ## Rules and trust
 

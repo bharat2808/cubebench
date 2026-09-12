@@ -27,8 +27,11 @@ export class ResultSigner {
   readonly privateKey: KeyObject;
   readonly publicKey: string;
   readonly keyId: string;
-  constructor(path?: string) {
-    if (path && existsSync(path)) {
+  constructor(options?: string | { path?: string; privateKeyPem?: string }) {
+    const path = typeof options === 'string' ? options : options?.path;
+    if (typeof options !== 'string' && options?.privateKeyPem) {
+      this.privateKey = createPrivateKey(options.privateKeyPem);
+    } else if (path && existsSync(path)) {
       this.privateKey = createPrivateKey(readFileSync(path));
     } else {
       this.privateKey = generateKeyPairSync('ed25519').privateKey;

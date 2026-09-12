@@ -49,13 +49,15 @@ export function security(store: Repository, options: SecurityOptions) {
       res.status(403).json({ error: 'Invalid Host' });
       return;
     }
-    if (!(options.allowedHosts ?? ['localhost', '127.0.0.1', '[::1]']).includes(host.hostname)) {
+    const allowedHosts = options.allowedHosts ?? ['localhost', '127.0.0.1', '[::1]'];
+    if (!allowedHosts.includes('*') && !allowedHosts.includes(host.hostname)) {
       res.status(403).json({ error: 'Host forbidden' });
       return;
     }
     const origin = req.get('origin');
     const ownOrigin = `${req.secure ? 'https' : 'http'}://${req.headers.host}`;
-    if (origin && !(options.allowedOrigins ?? [ownOrigin, publicUrl]).includes(origin)) {
+    const allowedOrigins = options.allowedOrigins ?? [ownOrigin, publicUrl];
+    if (origin && !allowedOrigins.includes('*') && !allowedOrigins.includes(origin)) {
       res.status(403).json({ error: 'Origin forbidden' });
       return;
     }

@@ -57,11 +57,19 @@ export class BenchmarkService {
   private readonly publicUrl: string;
   constructor(
     readonly store: Repository,
-    options: { clock?: () => number; signingKeyPath?: string; publicUrl?: string } = {},
+    options: {
+      clock?: () => number;
+      signingKeyPath?: string;
+      signingKeyPem?: string;
+      publicUrl?: string;
+    } = {},
   ) {
     this.clock = options.clock ?? (() => performance.now());
     this.publicUrl = normalizePublicUrl(options.publicUrl);
-    this.signer = new ResultSigner(options.signingKeyPath);
+    this.signer = new ResultSigner({
+      path: options.signingKeyPath,
+      privateKeyPem: options.signingKeyPem,
+    });
     this.publicKey = this.signer.publicKey;
     this.store.transaction(() => {
       for (const league of ['sprint', 'live'])

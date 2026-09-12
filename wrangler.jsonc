@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "rubiks-cube-bench",
+  "main": "cloudflare/src/index.ts",
+  "compatibility_date": "2026-09-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "PUBLIC_URL": "https://rubiks-cube-bench.vermabharat642.workers.dev",
+  },
+  "assets": {
+    "directory": "dist/web",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/mcp*", "/api/*", "/internal/*", "/.well-known/*"],
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ARENA", "class_name": "CubeBenchArena" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CubeBenchArena"] }],
+  "observability": { "enabled": true },
+}

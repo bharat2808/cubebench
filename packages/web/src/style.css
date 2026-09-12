@@ -636,12 +636,21 @@ footer > span:last-child {
   border: 1px solid #bdd7c323;
   background: #ffffff04;
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 .move-grid button:nth-child(even) {
   color: #81a690;
 }
 .move-grid button:hover {
   background: #b8eccb19;
+}
+.move-arrow {
+  color: #81a690;
+  font-size: 18px;
+  line-height: 1;
 }
 .check {
   display: flex;
@@ -889,6 +898,14 @@ th {
   padding: 9px 0;
   border-bottom: 1px solid #ffffff0a;
   font-size: 12px;
+}
+.identity-details {
+  display: block;
+  margin-top: 3px;
+  color: #789183;
+  font-size: 11px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
 }
 .contrast {
   background: #000;
@@ -1276,6 +1293,23 @@ footer {
   display: block;
   font-size: 12px;
   margin-bottom: 6px;
+}
+.net-face-actions {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+.net-face-actions button {
+  flex: 1;
+  min-height: 30px;
+  border: 1px solid #809c8850;
+  border-radius: 4px;
+  background: #ffffff08;
+  color: #c4e1cc;
+  line-height: 1;
+}
+.net-face-actions button:hover {
+  background: #b8eccb19;
 }
 .net-stickers {
   display: grid;

@@ -965,6 +965,13 @@ export class BenchmarkService {
         const mid = Math.floor(times.length / 2);
         return {
           competitor: results[0]!.metadata.display_name,
+          model_id: results[0]!.metadata.model_id ?? 'unspecified',
+          claimed_provider: results[0]!.metadata.claimed_provider ?? 'unspecified',
+          claimed_model: results[0]!.metadata.claimed_model ?? 'unspecified',
+          model_snapshot: results[0]!.metadata.model_snapshot ?? null,
+          harness_name: results[0]!.metadata.harness_name ?? 'unspecified',
+          harness_version: results[0]!.metadata.harness_version ?? 'unspecified',
+          mcp_client_identity: results[0]!.metadata.mcp_client_identity ?? 'unspecified',
           identity_key,
           attempts: results.length,
           completed: successes.length,

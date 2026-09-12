@@ -147,9 +147,10 @@ export class CubeBenchArena extends DurableObject<Env> {
     if (actor) return actor;
     if (!create) return undefined;
     const credential = issueAccessToken(this.store, 'Anonymous browser', 'community', 24 * 30);
+    const secure = new URL(request.url).protocol === 'https:' ? ' Secure;' : '';
     headers.append(
       'Set-Cookie',
-      `cubebench_session=${credential.token}; HttpOnly; SameSite=Strict; Max-Age=${30 * 86400}; Path=/`,
+      `cubebench_session=${credential.token}; HttpOnly; SameSite=Strict;${secure} Max-Age=${30 * 86400}; Path=/`,
     );
     return credential.actor;
   }

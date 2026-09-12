@@ -61,6 +61,8 @@ export const failureSchema = z.enum([
 export type Failure = z.infer<typeof failureSchema>;
 export const metadataSchema = z.strictObject({
   display_name: z.string().min(1).max(80),
+  // Stable provider/model slug when one exists; display_name remains a human label.
+  model_id: z.string().max(160).default('unspecified'),
   claimed_provider: z.string().max(80).default('unspecified'),
   claimed_model: z.string().max(160).default('unspecified'),
   model_snapshot: z.string().max(160).nullable().default(null),
@@ -215,6 +217,13 @@ export const resultSchema = z.strictObject({
 export type ResultRecord = z.infer<typeof resultSchema>;
 export const leaderboardRowSchema = z.strictObject({
   competitor: z.string(),
+  model_id: z.string(),
+  claimed_provider: z.string(),
+  claimed_model: z.string(),
+  model_snapshot: z.string().nullable(),
+  harness_name: z.string(),
+  harness_version: z.string(),
+  mcp_client_identity: z.string(),
   identity_key: z.string(),
   attempts: z.number().int(),
   completed: z.number().int(),

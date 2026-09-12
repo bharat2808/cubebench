@@ -43,18 +43,29 @@ function supportsWebGL() {
 function CubeFallback({ state, onTurn }: { state: CubeState; onTurn?: (face: string) => void }) {
   return (
     <div className="cube-unavailable">
-      <p>3D rendering unavailable. The cube net and face move buttons remain usable.</p>
+      <p>3D rendering unavailable. Choose ↻ or ↺ on the labeled face you want to turn.</p>
       <div className="cube-net">
         {Object.entries(state.facelets).map(([face, stickers]) => (
-          <button
-            type="button"
-            className="net-face"
-            key={face}
-            aria-label={'Turn ' + face + ' from cube net'}
-            disabled={!onTurn}
-            onClick={() => onTurn?.(face)}
-          >
+          <div className="net-face" key={face}>
             <strong>{face} face</strong>
+            <div className="net-face-actions" aria-label={face + ' face moves'}>
+              <button
+                type="button"
+                aria-label={'Turn ' + face + ' clockwise'}
+                disabled={!onTurn}
+                onClick={() => onTurn?.(face)}
+              >
+                ↻
+              </button>
+              <button
+                type="button"
+                aria-label={'Turn ' + face + ' counterclockwise'}
+                disabled={!onTurn}
+                onClick={() => onTurn?.(face + "'")}
+              >
+                ↺
+              </button>
+            </div>
             <span
               className="net-stickers"
               style={{ gridTemplateColumns: `repeat(${state.size},minmax(0,1fr))` }}
@@ -65,7 +76,7 @@ function CubeFallback({ state, onTurn }: { state: CubeState; onTurn?: (face: str
                 </span>
               ))}
             </span>
-          </button>
+          </div>
         ))}
       </div>
     </div>
@@ -123,9 +134,14 @@ function Stickers({
   useFrame(() => {
     if (!group.current) return;
     group.current.rotation.set(0, 0, 0);
-    if (active)
+    if (active) {
+      // The engine represents an inverse quarter-turn as three turns so its
+      // integer state transition stays canonical. Animate that as -90°/ +90°
+      // instead of a visually misleading 270° sweep in the same direction.
+      const visualQuarterTurns = ((active.quarterTurns + 2) % 4 + 4) % 4 - 2;
       group.current.rotation[(['x', 'y', 'z'] as const)[active.axis]] =
-        (progress.current * active.quarterTurns * Math.PI) / 2;
+        (progress.current * visualQuarterTurns * Math.PI) / 2;
+    }
   });
   const render = (moving: boolean) =>
     stickers

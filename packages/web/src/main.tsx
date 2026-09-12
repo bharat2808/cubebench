@@ -24,7 +24,13 @@ import {
   isSolved,
   type CubeState,
 } from '../../cube-core/src/index';
-import type { MatchView, CubeEvent, ResultRecord, RunView } from '../../shared-contracts/src/index';
+import type {
+  CompetitorMetadata,
+  MatchView,
+  CubeEvent,
+  ResultRecord,
+  RunView,
+} from '../../shared-contracts/src/index';
 const CubeView = React.lazy(() => import('./Cube').then((module) => ({ default: module.Cube })));
 function Cube(props: React.ComponentProps<typeof import('./Cube').Cube>) {
   return (
@@ -74,6 +80,25 @@ function useData<T>(path: string, initial: T) {
   return { data, error, loading, setData };
 }
 const time = (ms: number) => `${(ms / 1000).toFixed(2)}s`;
+const modelIdentity = (metadata: CompetitorMetadata) => {
+  const modelId = metadata.model_id ?? 'unspecified';
+  const provider = metadata.claimed_provider ?? 'unspecified';
+  const model = metadata.claimed_model ?? 'unspecified';
+  if (modelId !== 'unspecified') return modelId;
+  if (provider !== 'unspecified' && model !== 'unspecified') return `${provider}/${model}`;
+  return model;
+};
+const identityDetails = (metadata: CompetitorMetadata) => {
+  const model = modelIdentity(metadata);
+  const snapshot = metadata.model_snapshot ? ` · snapshot ${metadata.model_snapshot}` : '';
+  const harnessName = metadata.harness_name ?? 'unspecified';
+  const harnessVersion = metadata.harness_version ?? 'unspecified';
+  const harness =
+    harnessName !== 'unspecified'
+      ? ` · ${harnessName}${harnessVersion !== 'unspecified' ? ` ${harnessVersion}` : ''}`
+      : '';
+  return `${model}${snapshot}${harness}`;
+};
 function Size({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
     <label>
@@ -518,7 +543,9 @@ function Human() {
               </button>
             </div>
           )}
-          <div className="stage-hint">Drag to orbit · Scroll to zoom · Tap a face to turn</div>
+          <div className="stage-hint">
+            Drag to orbit · Scroll to zoom · Click a visible face to turn it clockwise
+          </div>
           <div className="timer">
             <div data-testid="human-time" aria-label="Personal solve timer">
               {time(elapsed)}
@@ -563,15 +590,27 @@ function Human() {
           <div className="move-grid">
             {['U', 'R', 'F', 'D', 'L', 'B'].map((face) => (
               <React.Fragment key={face}>
-                <button aria-label={'Turn ' + face} disabled={paused} onClick={() => turn(face)}>
-                  {face}
+                <button
+                  aria-label={'Turn ' + face + ' clockwise'}
+                  title={face + ' clockwise'}
+                  disabled={paused}
+                  onClick={() => turn(face)}
+                >
+                  <span>{face}</span>
+                  <span className="move-arrow" aria-hidden="true">
+                    ↻
+                  </span>
                 </button>
                 <button
-                  aria-label={'Turn ' + face + "'"}
+                  aria-label={'Turn ' + face + ' counterclockwise'}
+                  title={face + ' counterclockwise'}
                   disabled={paused}
                   onClick={() => turn(face + "'")}
                 >
-                  {face}′
+                  <span>{face}</span>
+                  <span className="move-arrow" aria-hidden="true">
+                    ↺
+                  </span>
                 </button>
               </React.Fragment>
             ))}
@@ -1070,6 +1109,9 @@ function Match({ id }: { id: string }) {
               <div>
                 <strong>{r.metadata.display_name}</strong>
                 <p>
+                  {identityDetails(r.metadata)}
+                </p>
+                <p>
                   {r.move_count} moves · {r.tool_call_count} calls ·{' '}
                   <span data-testid={'spectator-time-' + r.run_id} aria-live="off">
                     {time(
@@ -1180,8 +1222,11 @@ function Results({ league }: { league: string }) {
               <div>
                 <strong>{r.metadata.display_name}</strong>
                 <p>
+                  {identityDetails(r.metadata)}
+                </p>
+                <p>
                   {r.size} × {r.size} · {r.failure} · {r.move_count} moves · {r.tool_call_count}{' '}
-                  calls
+                  calls · {r.verification === 'verified' ? 'Verified identity' : 'Claimed identity'}
                 </p>
               </div>
               <strong>{time(r.elapsed_ms)}</strong>
@@ -1198,6 +1243,13 @@ function Results({ league }: { league: string }) {
 }
 type BoardRow = {
   competitor: string;
+  model_id: string;
+  claimed_provider: string;
+  claimed_model: string;
+  model_snapshot: string | null;
+  harness_name: string;
+  harness_version: string;
+  mcp_client_identity: string;
   identity_key: string;
   attempts: number;
   completed: number;
@@ -1256,7 +1308,16 @@ function Leaderboard({ classification }: { classification: string }) {
                 {data.rows.map((r, i) => (
                   <tr key={r.identity_key}>
                     <td>
-                      {i + 1} · {r.competitor}
+                      {i + 1} · <strong>{r.competitor}</strong>
+                      <small className="identity-details">
+                        {r.model_id !== 'unspecified'
+                          ? r.model_id
+                          : `${r.claimed_provider}/${r.claimed_model}`}
+                        {r.model_snapshot ? ` · ${r.model_snapshot}` : ''}
+                        {r.harness_name !== 'unspecified'
+                          ? ` · ${r.harness_name}${r.harness_version !== 'unspecified' ? ` ${r.harness_version}` : ''}`
+                          : ''}
+                      </small>
                     </td>
                     <td>{(r.completion_rate * 100).toFixed(0)}%</td>
                     <td>{r.attempts}</td>
@@ -1328,11 +1389,14 @@ function Replay({ id }: { id: string }) {
             </span>
           </div>
         </section>
-        <section className="panel controls">
-          <h2>{run?.metadata.display_name || 'Loading run…'}</h2>
-          <p>
-            {run?.league} · {run?.verification} · {run?.failure || run?.status}
-          </p>
+      <section className="panel controls">
+        <h2>{run?.metadata.display_name || 'Loading run…'}</h2>
+        <p>
+          {run && identityDetails(run.metadata)}
+        </p>
+        <p>
+          {run?.league} · {run?.verification} · {run?.failure || run?.status}
+        </p>
           <div className="timer">
             {time(run?.elapsed_ms || 0)}
             <span>OFFICIAL WALL CLOCK</span>

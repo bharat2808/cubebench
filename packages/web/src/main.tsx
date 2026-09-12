@@ -352,9 +352,12 @@ function Arena() {
               </span>
               <div>
                 <strong>
-                  {m.league === 'live' ? 'Live' : 'Sprint'} · {m.size} × {m.size}
+                  {m.runs.length
+                    ? m.runs.map((run) => run.metadata.display_name).join(' · ')
+                    : m.participants.map((participant) => participant.display_name).join(' · ')}
                 </strong>
                 <p>
+                  {m.league === 'live' ? 'Live' : 'Sprint'} · {m.size} × {m.size} ·{' '}
                   {m.entrant_count} entrants · {m.trial_count} trials
                 </p>
               </div>

@@ -80,7 +80,8 @@ npm run agent:run -- --league live --size 3
 The runner also accepts `--api-key`, `--model`, `--base-url`, `--mcp-url`, `--league`, and
 `--size`. Set `OPENAI_BASE_URL` for an OpenAI-compatible provider. The model is instructed to
 create a one-entrant community match with a 1,000 tool-call limit, keep solving through MCP until
-the server ends the run or it genuinely gives up, and report only the server result.
+the server ends the run or it genuinely gives up, extend its community timeout when needed up to
+one hour, and report only the server result.
 
 For stdio, keep the authoritative service running and build once with `npm run build`:
 

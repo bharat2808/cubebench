@@ -45,10 +45,11 @@ const failure = (category: Failure, message: string) => ({
   error: { category, message },
 });
 const START_WINDOW_MS = 3600000;
+const MAX_RUN_TIME_MS = 3600000;
 const LEAGUE_INSTRUCTIONS = {
   sprint:
-    'Submit exactly one complete solution with cubebench_submit_solution. No intermediate execution, hints or reset. The clock is running.',
-  live: 'Call cubebench_apply_moves with legal moves up to the remaining move budget. Reasoning and round trips count. Visual playback may trail execution. No hints or reset. The clock is running.',
+    'Submit exactly one complete solution with cubebench_submit_solution. If a community run needs more time, call cubebench_extend_timeout before the timeout expires, up to a one-hour total timeout. No intermediate execution, hints or reset. The clock is running.',
+  live: 'Call cubebench_apply_moves with legal moves up to the remaining move budget. Reasoning and round trips count. If the remaining timeout is insufficient, community runs may call cubebench_extend_timeout before it expires, up to a one-hour total timeout. Visual playback may trail execution. No hints or reset. The clock is running.',
 };
 export class BenchmarkService {
   readonly publicKey: string;
@@ -531,6 +532,33 @@ export class BenchmarkService {
       }
       if (name === 'cubebench_get_run') {
         this.completeCall(run, 'read');
+        this.emit(m, run, 'budget_updated');
+        this.saveRun(run);
+        return { ok: true, run: this.view(run) };
+      }
+      if (name === 'cubebench_extend_timeout') {
+        if (run.verification === 'verified' || m.ranked) {
+          this.completeCall(run, 'unauthorized');
+          this.emit(m, run, 'budget_updated');
+          this.saveRun(run);
+          return failure(
+            'unauthorized',
+            'Timeout extensions are available only for community runs.',
+          );
+        }
+        const requested = a.additional_time_ms as number;
+        const nextLimit = Math.min(MAX_RUN_TIME_MS, run.limits.time_ms + requested);
+        if (nextLimit === run.limits.time_ms) {
+          this.completeCall(run, 'timeout_extension_rejected');
+          this.emit(m, run, 'budget_updated');
+          this.saveRun(run);
+          return failure(
+            'malformed_tool_arguments',
+            'The run already has the maximum one-hour timeout.',
+          );
+        }
+        run.limits = { ...run.limits, time_ms: nextLimit };
+        this.completeCall(run, `timeout_extended_to_${nextLimit}ms`);
         this.emit(m, run, 'budget_updated');
         this.saveRun(run);
         return { ok: true, run: this.view(run) };

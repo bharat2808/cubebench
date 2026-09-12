@@ -312,6 +312,10 @@ export const toolInputs = {
     sequence: z.string().min(1).max(100000),
     trusted_usage: trustedUsageSchema.optional(),
   }),
+  cubebench_extend_timeout: z.strictObject({
+    ...runArgs,
+    additional_time_ms: z.number().int().min(1000).max(3600000),
+  }),
   cubebench_get_run: z.strictObject(runArgs),
   cubebench_abandon_run: z.strictObject(runArgs),
   cubebench_get_match: z.strictObject({ match_id: id }),
@@ -368,6 +372,7 @@ export const toolSuccessOutputs = {
     accepted_moves: z.array(z.string()),
     result: resultSchema.nullable(),
   }),
+  cubebench_extend_timeout: success({ run: runViewSchema }),
   cubebench_get_run: success({ run: runViewSchema }),
   cubebench_abandon_run: success({ run: runViewSchema }),
   cubebench_get_match: success({ match: matchViewSchema }),
@@ -398,6 +403,8 @@ export const descriptions: Record<ToolName, string> = {
     'Sprint only. Submit your ONE complete legal move sequence. This ends the run even if invalid or unsolved. No retry or reset.',
   cubebench_apply_moves:
     'Live only. Apply legal moves in order, up to the remaining match move budget. Timer includes reasoning and round trips. Visual playback may trail authoritative execution; invalid moves terminate the attempt.',
+  cubebench_extend_timeout:
+    'Community runs only. Extend the active run timeout when needed, up to a one-hour total timeout. The extension itself consumes a tool call and must be requested before the current timeout expires.',
   cubebench_get_run:
     'Read your current state using explicit IDs and run token. Consumes a run tool call; the clock continues.',
   cubebench_abandon_run:

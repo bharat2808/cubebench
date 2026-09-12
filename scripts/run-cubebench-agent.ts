@@ -92,11 +92,10 @@ and harness_version. Then solve the cube using only the state and rules returned
 
 Do not stop merely because a move failed, the state is difficult, or you are uncertain. Continue
 calling the appropriate MCP tool until the cube is solved, the server reports that the run ended,
-you genuinely give up, or the server exhausts the ${MAX_TOOL_CALLS}-call budget. If the connected
-MCP catalog exposes a budget-extension tool, use it whenever you believe the remaining budget is
-insufficient, up to the server's maximum; never invent such a tool or pretend that the budget was
-extended. Never claim a solution without submitting it through MCP. When the run ends, briefly
-report the server result.`,
+you genuinely give up, or the server exhausts the ${MAX_TOOL_CALLS}-call budget. If the run's
+remaining timeout is insufficient, call cubebench_extend_timeout before it expires; this community
+match may extend its total timeout up to one hour. Never claim a solution without submitting it
+through MCP. When the run ends, briefly report the server result.`,
   mcpServers: [mcp],
 });
 

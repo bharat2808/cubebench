@@ -166,4 +166,45 @@ describe('benchmark acceptance', () => {
       ).ok,
     ).toBe(false);
   });
+  it('extends a community timeout before it expires, capped at one hour', () => {
+    const s = setup();
+    const match = ok(s, 'cubebench_create_match', {
+      league: 'live',
+      size: 3,
+      limits: { time_ms: 1000, moves: 1000, tool_calls: 200 },
+    });
+    const participant = match.participants[0]!;
+    const ticket = participant.tokens[0]!;
+    const start = ok(s, 'cubebench_start_run', {
+      match_id: match.match_id,
+      participant_id: participant.participant_id,
+      round_id: ticket.round_id,
+      participant_token: ticket.participant_token,
+      metadata: meta,
+    });
+    const args = {
+      match_id: match.match_id,
+      participant_id: participant.participant_id,
+      run_id: start.run.run_id,
+      run_token: start.run_token,
+    };
+    s.tick(900);
+    const extended = ok(s, 'cubebench_extend_timeout', {
+      ...args,
+      additional_time_ms: 1000,
+    });
+    expect(extended.run.status).toBe('active');
+    expect(extended.run.remaining.time_ms).toBe(1100);
+    s.tick(1000);
+    expect(ok(s, 'cubebench_get_run', args).run.status).toBe('active');
+    s.tick(101);
+    expect(ok(s, 'cubebench_get_run', args).run.failure).toBe('timeout');
+
+    const capped = enter(s, 'live');
+    const cap = ok(s, 'cubebench_extend_timeout', {
+      ...capped.args,
+      additional_time_ms: 3600000,
+    });
+    expect(cap.run.remaining.time_ms).toBe(3600000);
+  });
 });

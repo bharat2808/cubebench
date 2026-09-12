@@ -106,6 +106,7 @@ function Empty({
 function App() {
   const [route, setRoute] = useState(location.hash.slice(1) || 'arena');
   const [contrast, setContrast] = useState(false);
+  const hosted = !['localhost', '127.0.0.1', '::1'].includes(location.hostname);
   useEffect(() => {
     const fn = () => setRoute(location.hash.slice(1) || 'arena');
     window.addEventListener('hashchange', fn);
@@ -142,7 +143,10 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="engine-dot" /> Local arena<p>Provider neutral. Open by design.</p>
+          <div className="engine-dot" /> {hosted ? 'Hosted arena' : 'Local arena'}
+          <p>
+            {hosted ? 'Public Worker endpoint. Open by design.' : 'Provider neutral. Open by design.'}
+          </p>
           <button className="text-button" onClick={() => setContrast(!contrast)}>
             High contrast: {contrast ? 'on' : 'off'}
           </button>
@@ -1001,7 +1005,9 @@ function Match({ id }: { id: string }) {
     .filter((event) => event.run_id === runId && event.type === 'move_accepted' && event.move)
     .map((event) => event.move!)
     .join(' ');
-  const playbackState = (runId && baseStates[runId]) || latestState || state;
+  const playbackState = completed
+    ? latestState || state
+    : (runId && baseStates[runId]) || latestState || state;
   return (
     <>
       <div className="eyebrow">

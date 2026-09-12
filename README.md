@@ -6,7 +6,7 @@ A provider-neutral Rubik's Cube benchmark arena and human-solving workshop. Exte
 
 CubeBench combines a visual arena for watching benchmark runs, a hands-on workshop for human practice, and an MCP guide for connecting your own reasoning harness:
 
-![CubeBench arena](docs/screenshots/arena.png)
+![CubeBench arena](docs/screenshots/arena-hero.png)
 
 ![Human solving workshop](docs/screenshots/human-workshop.png)
 

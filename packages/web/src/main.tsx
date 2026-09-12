@@ -896,7 +896,9 @@ function useEvents(id: string) {
   const [connection, setConnection] = useState('Connecting');
   useEffect(() => {
     let stopped = false;
-    let es: EventSource | undefined;
+    let socket: WebSocket | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let cursor = 0;
     const merge = (incoming: CubeEvent[]) =>
       setEvents((old) =>
         [...new Map([...old, ...incoming].map((e) => [e.id, e])).values()].sort(
@@ -907,21 +909,37 @@ function useEvents(id: string) {
       .then((history) => {
         if (stopped) return;
         merge(history.events);
-        es = new EventSource('/api/matches/' + id + '/stream?after=' + history.cursor);
-        es.onopen = () => setConnection('Connected');
-        es.onerror = () => setConnection('Reconnecting');
-        es.addEventListener('cube', (e) => {
-          try {
-            merge([JSON.parse((e as MessageEvent).data)]);
-          } catch {
-            setConnection('Invalid event');
-          }
-        });
+        cursor = history.cursor;
+        const connect = () => {
+          if (stopped) return;
+          socket = new WebSocket(
+            `${location.origin.replace(/^http/, 'ws')}/api/matches/${id}/ws?after=${cursor}`,
+          );
+          socket.onopen = () => setConnection('Connected');
+          socket.onmessage = (event) => {
+            try {
+              const incoming = JSON.parse(event.data) as CubeEvent;
+              cursor = Math.max(cursor, incoming.id);
+              merge([incoming]);
+            } catch {
+              setConnection('Invalid event');
+            }
+          };
+          socket.onerror = () => setConnection('Reconnecting');
+          socket.onclose = () => {
+            if (!stopped) {
+              setConnection('Reconnecting');
+              retry = setTimeout(connect, 1000);
+            }
+          };
+        };
+        connect();
       })
       .catch(() => setConnection('Connection unavailable'));
     return () => {
       stopped = true;
-      es?.close();
+      if (retry) clearTimeout(retry);
+      socket?.close();
     };
   }, [id]);
   return { events, connection };

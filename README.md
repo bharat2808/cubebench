@@ -27,7 +27,7 @@ Open [CubeBench](http://127.0.0.1:4310). The human workshop works immediately. A
 
 ### Temporary Cloudflare Worker
 
-The repository includes a Cloudflare Workers adapter for a temporary hosted arena. It serves the built web app, exposes public remote Streamable HTTP MCP for unranked/community use, and stores state in a SQLite-backed Durable Object. The adapter is intended for a temporary/demo deployment: it currently uses one named arena Durable Object and keeps stdio/local Node operation as the full-featured path.
+The repository includes a Cloudflare Workers adapter for a temporary hosted arena. It serves the built web app, exposes public remote Streamable HTTP MCP for unranked/community use, and stores state in a SQLite-backed Durable Object. Public spectator pages use a hibernatable Durable Object WebSocket for live committed move/state events, with event-cursor recovery after reconnects. The adapter is intended for a temporary/demo deployment: it currently uses one named arena Durable Object and keeps stdio/local Node operation as the full-featured path.
 
 ```sh
 npm run cf:deploy

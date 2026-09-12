@@ -82,7 +82,7 @@ export class CubeBenchArena extends DurableObject<Env> {
           role: 'community' as const,
         };
         return buildServer((name, args, clientIdentity) => {
-          return this.service.execute(name, args, {
+          return this.execute(name, args, {
             ...actor,
             clientIdentity: clientIdentity ?? actor.clientIdentity,
           });
@@ -90,6 +90,48 @@ export class CubeBenchArena extends DurableObject<Env> {
       },
       { responseMode: 'auto' },
     );
+  }
+
+  private execute(name: Parameters<BenchmarkService['execute']>[0], args: unknown, actor: Actor) {
+    const input = args as Record<string, unknown>;
+    const knownMatchId = typeof input.match_id === 'string' ? input.match_id : undefined;
+    const before = knownMatchId ? this.lastEventId(knownMatchId) : 0;
+    const output = this.service.execute(name, args, actor) as Record<string, unknown>;
+    const run = output.run as Record<string, unknown> | undefined;
+    const result = output.result as Record<string, unknown> | null | undefined;
+    const matchId =
+      knownMatchId ??
+      (typeof output.match_id === 'string' ? output.match_id : undefined) ??
+      (typeof run?.match_id === 'string' ? run.match_id : undefined) ??
+      (typeof result?.match_id === 'string' ? result.match_id : undefined);
+    if (matchId) this.broadcastEvents(matchId, before);
+    return output;
+  }
+
+  private lastEventId(matchId: string) {
+    const event = this.store.lastEvent(matchId) as { id?: unknown } | undefined;
+    return typeof event?.id === 'number' ? event.id : 0;
+  }
+
+  private broadcastEvents(matchId: string, after: number) {
+    const sockets = this.ctx.getWebSockets(`match:${matchId}`);
+    if (!sockets.length) return;
+    let events: unknown[];
+    try {
+      events = this.service.getEvents(matchId, after, 1000);
+    } catch {
+      return;
+    }
+    for (const event of events) {
+      const message = JSON.stringify(event);
+      for (const socket of sockets) {
+        try {
+          socket.send(message);
+        } catch {
+          // Cloudflare removes closed hibernating sockets from getWebSockets().
+        }
+      }
+    }
   }
 
   private authenticate(request: Request): Actor | null {
@@ -142,11 +184,7 @@ export class CubeBenchArena extends DurableObject<Env> {
       const input = createMatchSchema.parse(await parseBody(request));
       if (input.ranked) return json({ error: 'Browser matches must be unranked' }, { status: 403 });
       return json(
-        this.service.execute(
-          'cubebench_create_match',
-          input,
-          this.browser(request, headers, true)!,
-        ),
+        this.execute('cubebench_create_match', input, this.browser(request, headers, true)!),
         { headers },
       );
     }
@@ -192,6 +230,26 @@ export class CubeBenchArena extends DurableObject<Env> {
       return new Response(payload || ': connected\n\n', {
         headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform' },
       });
+    }
+    const websocket = url.pathname.match(/^\/api\/matches\/([^/]+)\/ws$/);
+    if (websocket && request.method === 'GET') {
+      if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket')
+        return json({ error: 'WebSocket upgrade required' }, { status: 426 });
+      const cursor = Number(url.searchParams.get('after') ?? 0);
+      if (!Number.isInteger(cursor) || cursor < 0)
+        return json({ error: 'Invalid cursor' }, { status: 400 });
+      try {
+        this.service.getMatch(websocket[1]!, { id: 'public', role: 'community' });
+      } catch {
+        return json({ error: 'Not found or unauthorized' }, { status: 404 });
+      }
+      const pair = new WebSocketPair();
+      const client = pair[0];
+      const server = pair[1];
+      this.ctx.acceptWebSocket(server, [`match:${websocket[1]!}`]);
+      for (const event of this.service.getEvents(websocket[1]!, cursor, 1000))
+        server.send(JSON.stringify(event));
+      return new Response(null, { status: 101, webSocket: client });
     }
     const run = url.pathname.match(/^\/api\/runs\/([^/]+)$/);
     if (run && request.method === 'GET') return json(this.service.getPublicRun(run[1]!));
@@ -268,6 +326,12 @@ export class CubeBenchArena extends DurableObject<Env> {
     }
     return this.api(request);
   }
+
+  webSocketMessage() {}
+
+  webSocketClose() {}
+
+  webSocketError() {}
 }
 
 const backendPath = (pathname: string) =>

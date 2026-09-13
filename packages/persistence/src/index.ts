@@ -75,21 +75,41 @@ export class SqliteRepository implements Repository {
     this.db.exec(
       'CREATE TABLE IF NOT EXISTS migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)',
     );
-    if (this.db.prepare('SELECT version FROM migrations WHERE version=1').get()) return;
+    if (!this.db.prepare('SELECT version FROM migrations WHERE version=1').get()) {
+      this.db
+        .transaction(() => {
+          for (const table of tables) {
+            this.db.exec(
+              `CREATE TABLE ${table}(id TEXT PRIMARY KEY, body TEXT NOT NULL CHECK(json_valid(body)), match_id TEXT, participant_id TEXT, league TEXT, size INTEGER, classification TEXT, status TEXT, owner_id TEXT, seed TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+            );
+            this.db.exec(
+              `CREATE INDEX ${table}_match ON ${table}(match_id, status); CREATE INDEX ${table}_owner ON ${table}(owner_id, created_at); CREATE INDEX ${table}_leaderboard ON ${table}(league, classification, size, created_at)`,
+            );
+          }
+          this.db.exec(
+            `CREATE UNIQUE INDEX rounds_seed_unique ON rounds(seed); CREATE TABLE events(id INTEGER PRIMARY KEY AUTOINCREMENT, match_id TEXT NOT NULL, round_id TEXT, body TEXT NOT NULL CHECK(json_valid(body))); CREATE INDEX events_replay ON events(match_id,id); CREATE TRIGGER results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER events_immutable_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; CREATE TRIGGER events_immutable_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END;`,
+          );
+          this.db.prepare('INSERT INTO migrations VALUES(1,?)').run(new Date().toISOString());
+        })
+        .immediate();
+    }
+    if (this.db.prepare('SELECT version FROM migrations WHERE version=2').get()) return;
     this.db
       .transaction(() => {
-        for (const table of tables) {
-          this.db.exec(
-            `CREATE TABLE ${table}(id TEXT PRIMARY KEY, body TEXT NOT NULL CHECK(json_valid(body)), match_id TEXT, participant_id TEXT, league TEXT, size INTEGER, classification TEXT, status TEXT, owner_id TEXT, seed TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
-          );
-          this.db.exec(
-            `CREATE INDEX ${table}_match ON ${table}(match_id, status); CREATE INDEX ${table}_owner ON ${table}(owner_id, created_at); CREATE INDEX ${table}_leaderboard ON ${table}(league, classification, size, created_at)`,
-          );
+        this.db.exec(
+          'DROP TRIGGER IF EXISTS results_immutable_update; DROP TRIGGER IF EXISTS results_immutable_delete;',
+        );
+        for (const table of ['matches', 'runs', 'results']) {
+          this.db
+            .prepare(
+              `UPDATE ${table} SET body=json_set(body, '$.difficulty', 'medium') WHERE json_type(body, '$.difficulty') IS NULL`,
+            )
+            .run();
         }
         this.db.exec(
-          `CREATE UNIQUE INDEX rounds_seed_unique ON rounds(seed); CREATE TABLE events(id INTEGER PRIMARY KEY AUTOINCREMENT, match_id TEXT NOT NULL, round_id TEXT, body TEXT NOT NULL CHECK(json_valid(body))); CREATE INDEX events_replay ON events(match_id,id); CREATE TRIGGER results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER events_immutable_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; CREATE TRIGGER events_immutable_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END;`,
+          "CREATE TRIGGER results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END;",
         );
-        this.db.prepare('INSERT INTO migrations VALUES(1,?)').run(new Date().toISOString());
+        this.db.prepare('INSERT INTO migrations VALUES(2,?)').run(new Date().toISOString());
       })
       .immediate();
   }

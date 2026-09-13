@@ -1,9 +1,5 @@
 import type { DurableObjectStorage, SqlStorage } from '@cloudflare/workers-types';
-import type {
-  Collection,
-  IndexFields,
-  Repository,
-} from '../../packages/persistence/src/index.ts';
+import type { Collection, IndexFields, Repository } from '../../packages/persistence/src/index.ts';
 
 const tables: Collection[] = [
   'identities',
@@ -43,17 +39,23 @@ export class DurableObjectRepository implements Repository {
     this.sql.exec(
       'CREATE TABLE IF NOT EXISTS migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)',
     );
-    if (this.sql.exec('SELECT version FROM migrations WHERE version=1').toArray().length) return;
+    if (!this.sql.exec('SELECT version FROM migrations WHERE version=1').toArray().length) {
+      this.sql.exec(
+        tables
+          .map(
+            (table) =>
+              `CREATE TABLE IF NOT EXISTS ${table}(id TEXT PRIMARY KEY, body TEXT NOT NULL, match_id TEXT, participant_id TEXT, league TEXT, size INTEGER, classification TEXT, status TEXT, owner_id TEXT, seed TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS ${table}_match ON ${table}(match_id, status); CREATE INDEX IF NOT EXISTS ${table}_owner ON ${table}(owner_id, created_at); CREATE INDEX IF NOT EXISTS ${table}_leaderboard ON ${table}(league, classification, size, created_at);`,
+          )
+          .join(''),
+      );
+      this.sql.exec(
+        `CREATE UNIQUE INDEX IF NOT EXISTS rounds_seed_unique ON rounds(seed); CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, match_id TEXT NOT NULL, round_id TEXT, body TEXT NOT NULL); CREATE INDEX IF NOT EXISTS events_replay ON events(match_id,id); CREATE TRIGGER IF NOT EXISTS results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER IF NOT EXISTS results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER IF NOT EXISTS events_immutable_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; CREATE TRIGGER IF NOT EXISTS events_immutable_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; INSERT INTO migrations VALUES(1,?)`,
+        new Date().toISOString(),
+      );
+    }
+    if (this.sql.exec('SELECT version FROM migrations WHERE version=2').toArray().length) return;
     this.sql.exec(
-      tables
-        .map(
-          (table) =>
-            `CREATE TABLE IF NOT EXISTS ${table}(id TEXT PRIMARY KEY, body TEXT NOT NULL, match_id TEXT, participant_id TEXT, league TEXT, size INTEGER, classification TEXT, status TEXT, owner_id TEXT, seed TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS ${table}_match ON ${table}(match_id, status); CREATE INDEX IF NOT EXISTS ${table}_owner ON ${table}(owner_id, created_at); CREATE INDEX IF NOT EXISTS ${table}_leaderboard ON ${table}(league, classification, size, created_at);`,
-        )
-        .join(''),
-    );
-    this.sql.exec(
-      `CREATE UNIQUE INDEX IF NOT EXISTS rounds_seed_unique ON rounds(seed); CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, match_id TEXT NOT NULL, round_id TEXT, body TEXT NOT NULL); CREATE INDEX IF NOT EXISTS events_replay ON events(match_id,id); CREATE TRIGGER IF NOT EXISTS results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER IF NOT EXISTS results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER IF NOT EXISTS events_immutable_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; CREATE TRIGGER IF NOT EXISTS events_immutable_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT,'immutable event'); END; INSERT INTO migrations VALUES(1,?)`,
+      `DROP TRIGGER IF EXISTS results_immutable_update; DROP TRIGGER IF EXISTS results_immutable_delete; UPDATE matches SET body=json_set(body, '$.difficulty', 'medium') WHERE json_type(body, '$.difficulty') IS NULL; UPDATE runs SET body=json_set(body, '$.difficulty', 'medium') WHERE json_type(body, '$.difficulty') IS NULL; UPDATE results SET body=json_set(body, '$.difficulty', 'medium') WHERE json_type(body, '$.difficulty') IS NULL; CREATE TRIGGER IF NOT EXISTS results_immutable_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; CREATE TRIGGER IF NOT EXISTS results_immutable_delete BEFORE DELETE ON results BEGIN SELECT RAISE(ABORT,'immutable result'); END; INSERT INTO migrations VALUES(2,?)`,
       new Date().toISOString(),
     );
   }

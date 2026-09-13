@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   SqliteRepository,
@@ -43,6 +46,27 @@ describe('transactional persistence', () => {
     db.insert('rounds', 'a', {}, { seed: 'seed' });
     expect(() => db.insert('rounds', 'b', {}, { seed: 'seed' })).toThrow();
     db.close();
+  });
+  it('backfills difficulty on records from the pre-difficulty schema', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'cubebench-migration-'));
+    const path = join(directory, 'cube.sqlite');
+    const legacy = new SqliteRepository(path);
+    legacy.insert('matches', 'match', { legacy: true });
+    legacy.insert('runs', 'run', { legacy: true });
+    legacy.insert('results', 'result', { legacy: true });
+    legacy.db.prepare('DELETE FROM migrations WHERE version=2').run();
+    legacy.close();
+
+    const migrated = new SqliteRepository(path);
+    expect(migrated.get('matches', 'match')).toEqual({ legacy: true, difficulty: 'medium' });
+    expect(migrated.get('runs', 'run')).toEqual({ legacy: true, difficulty: 'medium' });
+    expect(migrated.get('results', 'result')).toEqual({ legacy: true, difficulty: 'medium' });
+    expect(migrated.db.prepare('SELECT version FROM migrations ORDER BY version').all()).toEqual([
+      { version: 1 },
+      { version: 2 },
+    ]);
+    migrated.close();
+    rmSync(directory, { recursive: true, force: true });
   });
   it('canonical signatures do not depend on object insertion order', () => {
     expect(canonicalJson({ z: 1, a: { b: 2, a: 1 } })).toBe(

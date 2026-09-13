@@ -480,7 +480,7 @@ function Human() {
       if (override !== undefined) next = override;
       else if (source === 'custom') next = custom;
       else if (source === 'difficulty') {
-        const lengths: Record<string, number> = { easy: 15, medium: 20, hard: 30, extra_hard: 40 };
+        const lengths: Record<string, number> = { easy: 15, medium: 20, hard: 30, extra_hard: 20 };
         nextSeed = crypto.randomUUID();
         next = generateScramble(n, nextSeed, lengths[difficulty]).scramble;
       } else {

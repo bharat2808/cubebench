@@ -344,7 +344,7 @@
     },
     {
       "name": "cubebench_create_match",
-      "description": "Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The difficulty field is required; the scramble and its length are internal. For public matches, show the complete returned spectator_url to the user before starting any run and open it in a visual browser when available. Do not call cubebench_start_run until that preview URL has been shown; private matches return null and may proceed without a preview. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
+      "description": "Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The difficulty field is required; the scramble and its length are internal. Official extra_hard compatibility means a 3x3 live match using a verified depth-20 fixture, a 20-step post-start horizon, and one move per live tool call. For public matches, show the complete returned spectator_url to the user before starting any run and open it in a visual browser when available. Do not call cubebench_start_run until that preview URL has been shown; private matches return null and may proceed without a preview. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",

@@ -9,6 +9,7 @@ import {
   parseMoves,
   serializeMoves,
 } from '../packages/cube-core/src/index.js';
+import { officialExtraHardScramble } from '../packages/benchmark-core/src/types.js';
 import { SqliteRepository, type Actor } from '../packages/persistence/src/index.js';
 import {
   errorSchema,
@@ -108,7 +109,7 @@ function internalScramble(s: ReturnType<typeof setup>, runId: string) {
 describe('benchmark independent fairness and security invariants', () => {
   it('exposes only the difficulty label, never the internal scramble length', () => {
     const s = setup(),
-      match = s.create({ difficulty: 'extra_hard' }),
+      match = s.create({ league: 'live', difficulty: 'extra_hard' }),
       a = s.start(match);
     expect(a.response.run.difficulty).toBe('extra_hard');
     expect(s.service.getMatch(match.match_id).difficulty).toBe('extra_hard');
@@ -119,6 +120,40 @@ describe('benchmark independent fairness and security invariants', () => {
     expect(a.response.run.scramble).toBeNull();
     expect(Object.keys(a.response.run)).not.toContain('scramble_length');
   });
+
+  it('implements official extra_hard as a 3x3 depth-20 live fixture with paper limits', () => {
+    const s = setup(),
+      match = s.create({ league: 'live', difficulty: 'extra_hard' }),
+      persisted = s.store.get<Match>('matches', match.match_id)!,
+      scramble = persisted.rounds[0]!.scramble;
+    expect(scramble).toBe(officialExtraHardScramble(persisted.rounds[0]!.seed));
+    expect(parseMoves(scramble, 3)).toHaveLength(20);
+    expect(persisted.limits).toEqual({ time_ms: 1_800_000, moves: 20, tool_calls: 21 });
+    expect(s.service.execute('cubebench_create_match', {
+      league: 'live', size: 2, difficulty: 'extra_hard',
+    }, community)).toMatchObject({
+      ok: false,
+      error: { category: 'malformed_tool_arguments' },
+    });
+    expect(s.service.execute('cubebench_create_match', {
+      league: 'sprint', size: 3, difficulty: 'extra_hard',
+    }, community)).toMatchObject({
+      ok: false,
+      error: { category: 'malformed_tool_arguments' },
+    });
+  });
+
+  it('does not allow a multi-move live call to bypass the official 20-step horizon', () => {
+    const s = setup(),
+      match = s.create({ league: 'live', difficulty: 'extra_hard' }),
+      a = s.start(match);
+    const response = s.call('cubebench_apply_moves', {
+      ...a.args,
+      sequence: 'R U',
+    });
+    expect(response.run.failure).toBe('malformed_tool_arguments');
+    expect(response.accepted_moves).toEqual([]);
+  });
   it('defaults difficulty to medium and keeps it reproducible per level', () => {
     const s = setup(),
       plain = s.create();
@@ -127,7 +162,10 @@ describe('benchmark independent fairness and security invariants', () => {
     expect(a.response.run.difficulty).toBe('medium');
     const levels = ['easy', 'medium', 'hard', 'extra_hard'] as const;
     for (const difficulty of levels) {
-      const created = s.create({ difficulty });
+      const created = s.create({
+        difficulty,
+        league: difficulty === 'extra_hard' ? 'live' : 'sprint',
+      });
       expect(created.difficulty).toBe(difficulty);
     }
   });

@@ -2,6 +2,7 @@ import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import {
   applyMoves,
+  createSolved,
   generateScramble,
   isSolved,
   parseMoves,
@@ -28,7 +29,7 @@ import {
   metadataSchema,
   normalizePublicUrl,
 } from '../../shared-contracts/src/index.js';
-import { DIFFICULTY_SCRAMBLE_LENGTHS } from './types.js';
+import { DIFFICULTY_SCRAMBLE_LENGTHS, officialExtraHardScramble } from './types.js';
 import type { Match, Run, Round } from './types.js';
 import { digest, ResultSigner } from './signatures.js';
 export { canonicalJson } from './signatures.js';
@@ -208,19 +209,44 @@ export class BenchmarkService {
       );
     if (input.ranked && input.warmup)
       throw new DomainError('malformed_tool_arguments', 'Warmups cannot be ranked.');
+    if (input.difficulty === 'extra_hard' && input.size !== 3)
+      throw new DomainError(
+        'malformed_tool_arguments',
+        'Official extra_hard compatibility is available only for 3x3 cubes.',
+      );
+    if (input.difficulty === 'extra_hard' && input.league !== 'live')
+      throw new DomainError(
+        'malformed_tool_arguments',
+        'Official extra_hard compatibility requires the live league.',
+      );
     return this.store.transaction(() => {
       const match_id = randomUUID();
       // Difficulty is the only difficulty signal clients may see. The scramble
       // length for the level is internal and never returned to a client.
       const difficulty = input.difficulty ?? 'medium';
       const scrambleLength = DIFFICULTY_SCRAMBLE_LENGTHS[difficulty];
+      // The paper uses depth-20 states and a 20-step ReAct horizon. Start is
+      // recorded as call 1 by this service, so 21 calls allow 20 post-start
+      // interaction steps. Extra-hard budgets are fixed for comparability.
+      const limits =
+        difficulty === 'extra_hard'
+          ? { time_ms: 1_800_000, moves: 20, tool_calls: 21 }
+          : input.limits;
       const participants = Array.from({ length: input.entrant_count }, (_, i) => ({
         participant_id: randomUUID(),
         display_name: `Entrant ${i + 1}`,
       }));
       const rounds: Round[] = Array.from({ length: input.trial_count }, (_, index) => {
         const seed = randomBytes(32).toString('hex');
-        const generated = generateScramble(input.size, seed, scrambleLength);
+        const scramble =
+          difficulty === 'extra_hard' && input.size === 3
+            ? officialExtraHardScramble(seed)
+            : generateScramble(input.size, seed, scrambleLength).scramble;
+        const generated = {
+          seed,
+          scramble,
+          state: applyMoves(createSolved(input.size, input.size), scramble),
+        };
         const execution_order = participants.map((p) => p.participant_id);
         for (let i = execution_order.length - 1; i > 0; i--) {
           const j = randomInt(i + 1);
@@ -238,11 +264,12 @@ export class BenchmarkService {
       const created_at = new Date().toISOString();
       const expires_at = new Date(
         Date.parse(created_at) +
-          input.entrant_count * input.trial_count * input.limits.time_ms +
+          input.entrant_count * input.trial_count * limits.time_ms +
           input.trial_count * START_WINDOW_MS,
       ).toISOString();
       const m: Match = {
         ...input,
+        limits,
         difficulty,
         match_id,
         owner_id: actor.id,
@@ -644,6 +671,12 @@ export class BenchmarkService {
           verifiedElapsed,
         );
       } else {
+        if (run.difficulty === 'extra_hard' && tokens.length !== 1) {
+          attempt.failure = 'malformed_tool_arguments';
+          attempt.rejected = tokens;
+          this.finish(m, run, attempt.failure);
+          return { ok: true, run: this.view(run), accepted_moves: [], result: this.result(run) };
+        }
         for (let index = 0; index < tokens.length; index++) {
           if (this.expired(run)) {
             attempt.failure = 'timeout';

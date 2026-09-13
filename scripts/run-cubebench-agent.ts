@@ -12,6 +12,7 @@ type Options = {
   mcpUrl: string;
   size: number;
   league: 'sprint' | 'live';
+  difficulty: 'easy' | 'medium' | 'hard' | 'extra_hard';
 };
 
 function usage(): never {
@@ -22,6 +23,11 @@ Options:
   --mcp-url <url>     CubeBench MCP endpoint (default: ${DEFAULT_MCP_URL})
   --size <2-7>        Cube size (default: 3)
   --league <sprint|live> (default: live)
+  --difficulty <easy|medium|hard|extra_hard> (default: medium)
+
+The difficulty label is the only scramble setting passed to CubeBench; the
+scramble length and sequence are internal server decisions and are never
+visible to the MCP client.
 
 Environment fallbacks:
   OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL, CUBEBENCH_MCP_URL
@@ -72,6 +78,10 @@ function parseOptions(): Options {
   const mcpUrl = option(args, '--mcp-url') ?? process.env.CUBEBENCH_MCP_URL ?? DEFAULT_MCP_URL;
   const size = Number(option(args, '--size') ?? 3);
   const league = option(args, '--league') ?? 'live';
+  const difficultyRaw = option(args, '--difficulty') ?? 'medium';
+  const difficulty = ['easy', 'medium', 'hard', 'extra_hard'].includes(difficultyRaw)
+    ? (difficultyRaw as 'easy' | 'medium' | 'hard' | 'extra_hard')
+    : undefined;
 
   if (!apiKey || !model) usage();
   if (!Number.isInteger(size) || size < 2 || size > 7) {
@@ -80,6 +90,9 @@ function parseOptions(): Options {
   if (league !== 'sprint' && league !== 'live') {
     throw new Error('--league must be sprint or live.');
   }
+  if (!difficulty) {
+    throw new Error('--difficulty must be easy, medium, hard or extra_hard.');
+  }
   if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
     throw new Error('--base-url must be an HTTP(S) URL.');
   }
@@ -87,7 +100,7 @@ function parseOptions(): Options {
     throw new Error('--mcp-url must be an HTTP(S) URL.');
   }
 
-  return { apiKey, model, baseUrl, mcpUrl, size, league };
+  return { apiKey, model, baseUrl, mcpUrl, size, league, difficulty };
 }
 
 const options = parseOptions();
@@ -124,8 +137,9 @@ claimed_model=${JSON.stringify(options.model)}.
 Use only the connected CubeBench MCP tools. You have no shell, browser, code execution, search,
 reset, hint, or custom tools. Do not solve the cube outside the MCP protocol or invent tool results.
 
-Create one public community ${options.league} match for a ${options.size}x${options.size} cube with
-one entrant and exactly ${MAX_TOOL_CALLS} tool calls in its limits. Start the run with truthful
+Create one public community ${options.league} match for a ${options.size}x${options.size} cube at
+difficulty ${options.difficulty}, with one entrant and exactly ${MAX_TOOL_CALLS} tool calls in its
+limits. Start the run with truthful
 metadata: display_name, model_id, claimed_provider, claimed_model, model_snapshot, harness_name,
 and harness_version. Then solve the cube using only the state and rules returned by MCP.
 
@@ -153,11 +167,15 @@ try {
       output?: unknown;
     };
     if (event.name === 'tool_called') {
-      console.error(`[tool call] ${item.rawItem?.name ?? 'unknown'} ${safeLog(item.rawItem?.arguments ?? {})}`);
+      console.error(
+        `[tool call] ${item.rawItem?.name ?? 'unknown'} ${safeLog(item.rawItem?.arguments ?? {})}`,
+      );
     } else if (event.name === 'tool_output') {
       console.error(`[tool result] ${safeLog(item.output)}`);
     } else if (event.name === 'message_output_created') {
-      const message = item.rawItem as unknown as { content?: Array<{ type?: string; text?: string }> };
+      const message = item.rawItem as unknown as {
+        content?: Array<{ type?: string; text?: string }>;
+      };
       const text = message.content
         ?.filter((part) => part.type === 'output_text' && part.text)
         .map((part) => part.text)

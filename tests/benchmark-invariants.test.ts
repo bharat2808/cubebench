@@ -102,6 +102,32 @@ function internalScramble(s: ReturnType<typeof setup>, runId: string) {
 }
 
 describe('benchmark independent fairness and security invariants', () => {
+  it('exposes only the difficulty label, never the internal scramble length', () => {
+    const s = setup(),
+      match = s.create({ difficulty: 'extra_hard' }),
+      a = s.start(match);
+    expect(a.response.run.difficulty).toBe('extra_hard');
+    expect(s.service.getMatch(match.match_id).difficulty).toBe('extra_hard');
+    const serialized = JSON.stringify(a.response.run);
+    expect(serialized).not.toContain('scramble_length');
+    // The scramble value stays hidden while the round is active; the field
+    // may exist in the view as null, and must never carry the sequence.
+    expect(a.response.run.scramble).toBeNull();
+    expect(Object.keys(a.response.run)).not.toContain('scramble_length');
+  });
+  it('defaults difficulty to medium and keeps it reproducible per level', () => {
+    const s = setup(),
+      plain = s.create();
+    expect(plain.difficulty).toBe('medium');
+    const a = s.start(plain);
+    expect(a.response.run.difficulty).toBe('medium');
+    const levels = ['easy', 'medium', 'hard', 'extra_hard'] as const;
+    for (const difficulty of levels) {
+      const created = s.create({ difficulty });
+      expect(created.difficulty).toBe(difficulty);
+    }
+  });
+
   it('withholds the scramble from active tools and events until the round is complete', () => {
     const s = setup(),
       match = s.create({ entrant_count: 2 }),

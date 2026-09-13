@@ -15,11 +15,30 @@ export type Round = {
   execution_order: string[];
 };
 export type Participant = { participant_id: string; display_name: string };
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'extra_hard';
+
+/**
+ * Difficulty is the only difficulty signal visible to MCP clients. The scramble
+ * length produced for each level is an internal benchmark-service concern; it is
+ * never serialized into match, run, or result views before the round completes.
+ * Defaults keep a steady ramp for a 3-size cube: easy 15, medium 20,
+ * hard 30, extra hard 40.
+ */
+export const DIFFICULTY_SCRAMBLE_LENGTHS: Record<Difficulty, number> = {
+  easy: 15,
+  medium: 20,
+  hard: 30,
+  extra_hard: 40,
+};
+
+export const DIFFICULTY_NAMES: readonly Difficulty[] = ['easy', 'medium', 'hard', 'extra_hard'];
+
 export type Match = {
   match_id: string;
   owner_id: string;
   league: 'sprint' | 'live';
   size: number;
+  difficulty: Difficulty;
   entrant_count: number;
   trial_count: number;
   ranked: boolean;
@@ -40,6 +59,7 @@ export type Run = {
   actor: Actor;
   league: 'sprint' | 'live';
   size: number;
+  difficulty: Difficulty;
   state: CubeState;
   initial_state: CubeState;
   scramble: string;

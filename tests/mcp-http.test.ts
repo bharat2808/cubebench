@@ -81,7 +81,7 @@ describe('authenticated MCP HTTP', () => {
       ).toBe(true);
       const prompt = await client.getPrompt({ name: 'cubebench_compete' });
       expect(prompt.messages).toHaveLength(1);
-      expect(prompt.description).toBe('CubeBench competition prompt v2.0.0');
+      expect(prompt.description).toBe('CubeBench competition prompt v2.1.0');
       const promptText = prompt.messages[0]?.content;
       expect(promptText?.type).toBe('text');
       if (promptText?.type !== 'text') throw new Error('Expected text competition prompt');
@@ -91,8 +91,8 @@ describe('authenticated MCP HTTP', () => {
       );
       const rules = await client.callTool({ name: 'cubebench_get_rules', arguments: {} });
       const parsedRules = toolSuccessOutputs.cubebench_get_rules.parse(rules.structuredContent);
-      expect(parsedRules.versions.schema).toBe('2.0.0');
-      expect(parsedRules.versions.prompt).toBe('2.0.0');
+      expect(parsedRules.versions.schema).toBe('2.1.0');
+      expect(parsedRules.versions.prompt).toBe('2.1.0');
     });
 
   it('returns a canonical spectator URL while the created match is still waiting', async () => {

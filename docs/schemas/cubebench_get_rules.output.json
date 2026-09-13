@@ -31,7 +31,14 @@
               "type": "string"
             }
           },
-          "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+          "required": [
+            "schema",
+            "engine",
+            "notation",
+            "generator",
+            "prompt",
+            "format"
+          ],
           "additionalProperties": false
         },
         "leagues": {
@@ -41,13 +48,19 @@
             "properties": {
               "id": {
                 "type": "string",
-                "enum": ["sprint", "live"]
+                "enum": [
+                  "sprint",
+                  "live"
+                ]
               },
               "instructions": {
                 "type": "string"
               }
             },
-            "required": ["id", "instructions"],
+            "required": [
+              "id",
+              "instructions"
+            ],
             "additionalProperties": false
           }
         },
@@ -58,6 +71,18 @@
           "type": "array",
           "items": {
             "type": "number"
+          }
+        },
+        "difficulties": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard",
+              "extra_hard"
+            ]
           }
         },
         "maximum_size": {
@@ -85,7 +110,11 @@
               "maximum": 2000
             }
           },
-          "required": ["time_ms", "moves", "tool_calls"],
+          "required": [
+            "time_ms",
+            "moves",
+            "tool_calls"
+          ],
           "additionalProperties": false
         },
         "scoring": {
@@ -121,6 +150,7 @@
         "leagues",
         "notation",
         "sizes",
+        "difficulties",
         "maximum_size",
         "limits",
         "scoring",
@@ -160,11 +190,17 @@
               "type": "string"
             }
           },
-          "required": ["category", "message"],
+          "required": [
+            "category",
+            "message"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["ok", "error"],
+      "required": [
+        "ok",
+        "error"
+      ],
       "additionalProperties": false
     }
   ]

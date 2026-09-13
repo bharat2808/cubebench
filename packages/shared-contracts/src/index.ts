@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 export const VERSIONS = {
-  schema: '2.0.0',
+  schema: '2.1.0',
   engine: '1.0.0',
   notation: '1.0.0',
   generator: '1.0.0',
-  prompt: '2.0.0',
-  format: '2.0.0',
+  prompt: '2.1.0',
+  format: '2.1.0',
 } as const;
 export function normalizePublicUrl(value = 'http://127.0.0.1:4310', production = false): string {
   let url: URL;
@@ -103,6 +103,7 @@ export const runViewSchema = z.strictObject({
   participant_id: z.string(),
   league: leagueSchema,
   size: z.number().int(),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']),
   status: z.enum(['active', 'finished']),
   failure: failureSchema.nullable(),
   state: cubeSchema,
@@ -141,6 +142,7 @@ export const matchViewSchema = z.strictObject({
   match_id: z.string(),
   league: leagueSchema,
   size: z.number().int(),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']),
   entrant_count: z.number().int(),
   trial_count: z.number().int(),
   ranked: z.boolean(),
@@ -193,6 +195,7 @@ export const resultSchema = z.strictObject({
   submitter_identity: z.string(),
   runner_identity: z.string().nullable(),
   size: z.number().int(),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']),
   seed: z.string(),
   scramble: z.string(),
   initial_state: cubeSchema,
@@ -268,6 +271,7 @@ export const runArgs = { match_id: id, participant_id: id, run_id: id, run_token
 export const createMatchSchema = z.strictObject({
   league: leagueSchema,
   size: z.number().int().min(2).max(7),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']).optional(),
   entrant_count: z.number().int().min(1).max(8).default(1),
   trial_count: z.number().int().min(1).max(20).default(1),
   ranked: z.boolean().default(false),
@@ -332,6 +336,7 @@ const rules = success({
   leagues: z.array(z.strictObject({ id: leagueSchema, instructions: z.string() })),
   notation: z.string(),
   sizes: z.array(z.number()),
+  difficulties: z.array(z.enum(['easy', 'medium', 'hard', 'extra_hard'])),
   maximum_size: z.number(),
   limits: limitsSchema,
   scoring: z.string(),
@@ -343,6 +348,7 @@ export const toolSuccessOutputs = {
   cubebench_list_formats: success({ formats }),
   cubebench_create_match: success({
     match_id: id,
+    difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']),
     spectator_url: z.url().nullable(),
     participants: z.array(
       z.strictObject({
@@ -396,7 +402,7 @@ export const descriptions: Record<ToolName, string> = {
   cubebench_list_formats:
     'List versioned benchmark formats. Choose Sprint for one submission or Live for interactive batches.',
   cubebench_create_match:
-    'Create a fresh hidden-scramble match. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
+    'Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The scramble and its length are internal; the client only chooses the difficulty label. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
   cubebench_start_run:
     'Redeem the one-use participant token with explicit match, participant and round IDs. Timer starts now. Save run_id and run_token; solve immediately using the league tool.',
   cubebench_submit_solution:

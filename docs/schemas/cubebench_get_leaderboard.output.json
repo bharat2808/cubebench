@@ -11,11 +11,17 @@
         },
         "league": {
           "type": "string",
-          "enum": ["sprint", "live"]
+          "enum": [
+            "sprint",
+            "live"
+          ]
         },
         "result_class": {
           "type": "string",
-          "enum": ["verified", "community"]
+          "enum": [
+            "verified",
+            "community"
+          ]
         },
         "size": {
           "type": "number"
@@ -26,6 +32,34 @@
             "type": "object",
             "properties": {
               "competitor": {
+                "type": "string"
+              },
+              "model_id": {
+                "type": "string"
+              },
+              "claimed_provider": {
+                "type": "string"
+              },
+              "claimed_model": {
+                "type": "string"
+              },
+              "model_snapshot": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "harness_name": {
+                "type": "string"
+              },
+              "harness_version": {
+                "type": "string"
+              },
+              "mcp_client_identity": {
                 "type": "string"
               },
               "identity_key": {
@@ -97,6 +131,13 @@
             },
             "required": [
               "competitor",
+              "model_id",
+              "claimed_provider",
+              "claimed_model",
+              "model_snapshot",
+              "harness_name",
+              "harness_version",
+              "mcp_client_identity",
               "identity_key",
               "attempts",
               "completed",
@@ -111,7 +152,13 @@
           }
         }
       },
-      "required": ["ok", "league", "result_class", "size", "rows"],
+      "required": [
+        "ok",
+        "league",
+        "result_class",
+        "size",
+        "rows"
+      ],
       "additionalProperties": false
     },
     {
@@ -145,11 +192,17 @@
               "type": "string"
             }
           },
-          "required": ["category", "message"],
+          "required": [
+            "category",
+            "message"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["ok", "error"],
+      "required": [
+        "ok",
+        "error"
+      ],
       "additionalProperties": false
     }
   ]

@@ -42,7 +42,14 @@
                     "type": "string"
                   }
                 },
-                "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                "required": [
+                  "schema",
+                  "engine",
+                  "notation",
+                  "generator",
+                  "prompt",
+                  "format"
+                ],
                 "additionalProperties": false
               },
               "leagues": {
@@ -52,13 +59,19 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "enum": ["sprint", "live"]
+                      "enum": [
+                        "sprint",
+                        "live"
+                      ]
                     },
                     "instructions": {
                       "type": "string"
                     }
                   },
-                  "required": ["id", "instructions"],
+                  "required": [
+                    "id",
+                    "instructions"
+                  ],
                   "additionalProperties": false
                 }
               },
@@ -69,6 +82,18 @@
                 "type": "array",
                 "items": {
                   "type": "number"
+                }
+              },
+              "difficulties": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "easy",
+                    "medium",
+                    "hard",
+                    "extra_hard"
+                  ]
                 }
               },
               "maximum_size": {
@@ -96,7 +121,11 @@
                     "maximum": 2000
                   }
                 },
-                "required": ["time_ms", "moves", "tool_calls"],
+                "required": [
+                  "time_ms",
+                  "moves",
+                  "tool_calls"
+                ],
                 "additionalProperties": false
               },
               "scoring": {
@@ -132,6 +161,7 @@
               "leagues",
               "notation",
               "sizes",
+              "difficulties",
               "maximum_size",
               "limits",
               "scoring",
@@ -171,11 +201,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -220,7 +256,10 @@
                     },
                     "league": {
                       "type": "string",
-                      "enum": ["sprint", "live"]
+                      "enum": [
+                        "sprint",
+                        "live"
+                      ]
                     },
                     "sizes": {
                       "type": "array",
@@ -233,12 +272,21 @@
                       "const": "verified_wall_clock_ms"
                     }
                   },
-                  "required": ["id", "version", "league", "sizes", "metric"],
+                  "required": [
+                    "id",
+                    "version",
+                    "league",
+                    "sizes",
+                    "metric"
+                  ],
                   "additionalProperties": false
                 }
               }
             },
-            "required": ["ok", "formats"],
+            "required": [
+              "ok",
+              "formats"
+            ],
             "additionalProperties": false
           },
           {
@@ -272,11 +320,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -290,19 +344,31 @@
     },
     {
       "name": "cubebench_create_match",
-      "description": "Create a fresh hidden-scramble match. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
+      "description": "Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The scramble and its length are internal; the client only chooses the difficulty label. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
           "league": {
             "type": "string",
-            "enum": ["sprint", "live"]
+            "enum": [
+              "sprint",
+              "live"
+            ]
           },
           "size": {
             "type": "integer",
             "minimum": 2,
             "maximum": 7
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard",
+              "extra_hard"
+            ]
           },
           "entrant_count": {
             "default": 1,
@@ -327,7 +393,10 @@
           "visibility": {
             "default": "public",
             "type": "string",
-            "enum": ["public", "private"]
+            "enum": [
+              "public",
+              "private"
+            ]
           },
           "limits": {
             "default": {
@@ -356,7 +425,11 @@
                 "maximum": 2000
               }
             },
-            "required": ["time_ms", "moves", "tool_calls"],
+            "required": [
+              "time_ms",
+              "moves",
+              "tool_calls"
+            ],
             "additionalProperties": false
           }
         },
@@ -387,6 +460,15 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard",
+                  "extra_hard"
+                ]
               },
               "spectator_url": {
                 "anyOf": [
@@ -428,12 +510,19 @@
                             "type": "string"
                           }
                         },
-                        "required": ["round_id", "participant_token", "expires_at"],
+                        "required": [
+                          "round_id",
+                          "participant_token",
+                          "expires_at"
+                        ],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": ["participant_id", "tokens"],
+                  "required": [
+                    "participant_id",
+                    "tokens"
+                  ],
                   "additionalProperties": false
                 }
               },
@@ -459,12 +548,23 @@
                       }
                     }
                   },
-                  "required": ["round_id", "index", "execution_order"],
+                  "required": [
+                    "round_id",
+                    "index",
+                    "execution_order"
+                  ],
                   "additionalProperties": false
                 }
               }
             },
-            "required": ["ok", "match_id", "spectator_url", "participants", "rounds"],
+            "required": [
+              "ok",
+              "match_id",
+              "difficulty",
+              "spectator_url",
+              "participants",
+              "rounds"
+            ],
             "additionalProperties": false
           },
           {
@@ -498,11 +598,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -548,6 +654,11 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80
+              },
+              "model_id": {
+                "default": "unspecified",
+                "type": "string",
+                "maxLength": 160
               },
               "claimed_provider": {
                 "default": "unspecified",
@@ -613,6 +724,7 @@
             },
             "required": [
               "display_name",
+              "model_id",
               "claimed_provider",
               "claimed_model",
               "model_snapshot",
@@ -625,7 +737,13 @@
             "additionalProperties": false
           }
         },
-        "required": ["match_id", "participant_id", "round_id", "participant_token", "metadata"],
+        "required": [
+          "match_id",
+          "participant_id",
+          "round_id",
+          "participant_token",
+          "metadata"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -656,16 +774,31 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "finished"]
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
                   },
                   "failure": {
                     "anyOf": [
@@ -706,50 +839,102 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "R": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "F": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "D": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "L": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "B": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           }
                         },
-                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
                         "additionalProperties": false
                       }
                     },
-                    "required": ["size", "facelets"],
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
                     "additionalProperties": false
                   },
                   "scramble": {
@@ -800,7 +985,11 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "solved": {
@@ -828,7 +1017,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
                     "additionalProperties": false
                   },
                   "face_order": {
@@ -887,7 +1083,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
                     "additionalProperties": false
                   },
                   "metadata": {
@@ -897,6 +1100,11 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
                       },
                       "claimed_provider": {
                         "default": "unspecified",
@@ -962,6 +1170,7 @@
                     },
                     "required": [
                       "display_name",
+                      "model_id",
                       "claimed_provider",
                       "claimed_model",
                       "model_snapshot",
@@ -975,7 +1184,10 @@
                   },
                   "verification": {
                     "type": "string",
-                    "enum": ["verified", "community"]
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
                   },
                   "started_at": {
                     "type": "string"
@@ -998,6 +1210,7 @@
                   "participant_id",
                   "league",
                   "size",
+                  "difficulty",
                   "status",
                   "failure",
                   "state",
@@ -1048,11 +1261,21 @@
                     "maximum": 2000
                   }
                 },
-                "required": ["time_ms", "moves", "tool_calls"],
+                "required": [
+                  "time_ms",
+                  "moves",
+                  "tool_calls"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "run", "run_token", "instructions", "limits"],
+            "required": [
+              "ok",
+              "run",
+              "run_token",
+              "instructions",
+              "limits"
+            ],
             "additionalProperties": false
           },
           {
@@ -1086,11 +1309,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -1151,11 +1380,21 @@
                 "minimum": 0
               }
             },
-            "required": ["input_tokens", "output_tokens", "cost_usd"],
+            "required": [
+              "input_tokens",
+              "output_tokens",
+              "cost_usd"
+            ],
             "additionalProperties": false
           }
         },
-        "required": ["match_id", "participant_id", "run_id", "run_token", "sequence"],
+        "required": [
+          "match_id",
+          "participant_id",
+          "run_id",
+          "run_token",
+          "sequence"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -1186,16 +1425,31 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "finished"]
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
                   },
                   "failure": {
                     "anyOf": [
@@ -1236,50 +1490,102 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "R": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "F": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "D": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "L": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "B": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           }
                         },
-                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
                         "additionalProperties": false
                       }
                     },
-                    "required": ["size", "facelets"],
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
                     "additionalProperties": false
                   },
                   "scramble": {
@@ -1330,7 +1636,11 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "solved": {
@@ -1358,7 +1668,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
                     "additionalProperties": false
                   },
                   "face_order": {
@@ -1417,7 +1734,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
                     "additionalProperties": false
                   },
                   "metadata": {
@@ -1427,6 +1751,11 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
                       },
                       "claimed_provider": {
                         "default": "unspecified",
@@ -1492,6 +1821,7 @@
                     },
                     "required": [
                       "display_name",
+                      "model_id",
                       "claimed_provider",
                       "claimed_model",
                       "model_snapshot",
@@ -1505,7 +1835,10 @@
                   },
                   "verification": {
                     "type": "string",
-                    "enum": ["verified", "community"]
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
                   },
                   "started_at": {
                     "type": "string"
@@ -1528,6 +1861,7 @@
                   "participant_id",
                   "league",
                   "size",
+                  "difficulty",
                   "status",
                   "failure",
                   "state",
@@ -1576,15 +1910,25 @@
                       },
                       "league": {
                         "type": "string",
-                        "enum": ["sprint", "live"]
+                        "enum": [
+                          "sprint",
+                          "live"
+                        ]
                       },
                       "classification": {
                         "type": "string",
-                        "enum": ["ranked", "community", "practice"]
+                        "enum": [
+                          "ranked",
+                          "community",
+                          "practice"
+                        ]
                       },
                       "verification": {
                         "type": "string",
-                        "enum": ["verified", "community"]
+                        "enum": [
+                          "verified",
+                          "community"
+                        ]
                       },
                       "submitter_identity": {
                         "type": "string"
@@ -1603,6 +1947,15 @@
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
+                      },
+                      "difficulty": {
+                        "type": "string",
+                        "enum": [
+                          "easy",
+                          "medium",
+                          "hard",
+                          "extra_hard"
+                        ]
                       },
                       "seed": {
                         "type": "string"
@@ -1625,50 +1978,102 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "R": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "F": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "D": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "L": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "B": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["U", "R", "F", "D", "L", "B"],
+                            "required": [
+                              "U",
+                              "R",
+                              "F",
+                              "D",
+                              "L",
+                              "B"
+                            ],
                             "additionalProperties": false
                           }
                         },
-                        "required": ["size", "facelets"],
+                        "required": [
+                          "size",
+                          "facelets"
+                        ],
                         "additionalProperties": false
                       },
                       "final_state": {
@@ -1686,50 +2091,102 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "R": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "F": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "D": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "L": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "B": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["U", "R", "F", "D", "L", "B"],
+                            "required": [
+                              "U",
+                              "R",
+                              "F",
+                              "D",
+                              "L",
+                              "B"
+                            ],
                             "additionalProperties": false
                           }
                         },
-                        "required": ["size", "facelets"],
+                        "required": [
+                          "size",
+                          "facelets"
+                        ],
                         "additionalProperties": false
                       },
                       "versions": {
@@ -1814,7 +2271,13 @@
                               ]
                             }
                           },
-                          "required": ["call_index", "sequence", "accepted", "rejected", "failure"],
+                          "required": [
+                            "call_index",
+                            "sequence",
+                            "accepted",
+                            "rejected",
+                            "failure"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -1916,6 +2379,11 @@
                             "minLength": 1,
                             "maxLength": 80
                           },
+                          "model_id": {
+                            "default": "unspecified",
+                            "type": "string",
+                            "maxLength": 160
+                          },
                           "claimed_provider": {
                             "default": "unspecified",
                             "type": "string",
@@ -1980,6 +2448,7 @@
                         },
                         "required": [
                           "display_name",
+                          "model_id",
                           "claimed_provider",
                           "claimed_model",
                           "model_snapshot",
@@ -2011,7 +2480,11 @@
                                 "minimum": 0
                               }
                             },
-                            "required": ["input_tokens", "output_tokens", "cost_usd"],
+                            "required": [
+                              "input_tokens",
+                              "output_tokens",
+                              "cost_usd"
+                            ],
                             "additionalProperties": false
                           },
                           {
@@ -2041,6 +2514,7 @@
                       "submitter_identity",
                       "runner_identity",
                       "size",
+                      "difficulty",
                       "seed",
                       "scramble",
                       "initial_state",
@@ -2070,7 +2544,12 @@
                 ]
               }
             },
-            "required": ["ok", "run", "accepted_moves", "result"],
+            "required": [
+              "ok",
+              "run",
+              "accepted_moves",
+              "result"
+            ],
             "additionalProperties": false
           },
           {
@@ -2104,11 +2583,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -2170,11 +2655,21 @@
                 "minimum": 0
               }
             },
-            "required": ["input_tokens", "output_tokens", "cost_usd"],
+            "required": [
+              "input_tokens",
+              "output_tokens",
+              "cost_usd"
+            ],
             "additionalProperties": false
           }
         },
-        "required": ["match_id", "participant_id", "run_id", "run_token", "sequence"],
+        "required": [
+          "match_id",
+          "participant_id",
+          "run_id",
+          "run_token",
+          "sequence"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -2205,16 +2700,31 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "finished"]
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
                   },
                   "failure": {
                     "anyOf": [
@@ -2255,50 +2765,102 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "R": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "F": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "D": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "L": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "B": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           }
                         },
-                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
                         "additionalProperties": false
                       }
                     },
-                    "required": ["size", "facelets"],
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
                     "additionalProperties": false
                   },
                   "scramble": {
@@ -2349,7 +2911,11 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "solved": {
@@ -2377,7 +2943,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
                     "additionalProperties": false
                   },
                   "face_order": {
@@ -2436,7 +3009,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
                     "additionalProperties": false
                   },
                   "metadata": {
@@ -2446,6 +3026,11 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
                       },
                       "claimed_provider": {
                         "default": "unspecified",
@@ -2511,6 +3096,7 @@
                     },
                     "required": [
                       "display_name",
+                      "model_id",
                       "claimed_provider",
                       "claimed_model",
                       "model_snapshot",
@@ -2524,7 +3110,10 @@
                   },
                   "verification": {
                     "type": "string",
-                    "enum": ["verified", "community"]
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
                   },
                   "started_at": {
                     "type": "string"
@@ -2547,6 +3136,7 @@
                   "participant_id",
                   "league",
                   "size",
+                  "difficulty",
                   "status",
                   "failure",
                   "state",
@@ -2595,15 +3185,25 @@
                       },
                       "league": {
                         "type": "string",
-                        "enum": ["sprint", "live"]
+                        "enum": [
+                          "sprint",
+                          "live"
+                        ]
                       },
                       "classification": {
                         "type": "string",
-                        "enum": ["ranked", "community", "practice"]
+                        "enum": [
+                          "ranked",
+                          "community",
+                          "practice"
+                        ]
                       },
                       "verification": {
                         "type": "string",
-                        "enum": ["verified", "community"]
+                        "enum": [
+                          "verified",
+                          "community"
+                        ]
                       },
                       "submitter_identity": {
                         "type": "string"
@@ -2622,6 +3222,15 @@
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
+                      },
+                      "difficulty": {
+                        "type": "string",
+                        "enum": [
+                          "easy",
+                          "medium",
+                          "hard",
+                          "extra_hard"
+                        ]
                       },
                       "seed": {
                         "type": "string"
@@ -2644,50 +3253,102 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "R": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "F": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "D": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "L": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "B": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["U", "R", "F", "D", "L", "B"],
+                            "required": [
+                              "U",
+                              "R",
+                              "F",
+                              "D",
+                              "L",
+                              "B"
+                            ],
                             "additionalProperties": false
                           }
                         },
-                        "required": ["size", "facelets"],
+                        "required": [
+                          "size",
+                          "facelets"
+                        ],
                         "additionalProperties": false
                       },
                       "final_state": {
@@ -2705,50 +3366,102 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "R": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "F": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "D": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "L": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               },
                               "B": {
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": ["U", "R", "F", "D", "L", "B"]
+                                  "enum": [
+                                    "U",
+                                    "R",
+                                    "F",
+                                    "D",
+                                    "L",
+                                    "B"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["U", "R", "F", "D", "L", "B"],
+                            "required": [
+                              "U",
+                              "R",
+                              "F",
+                              "D",
+                              "L",
+                              "B"
+                            ],
                             "additionalProperties": false
                           }
                         },
-                        "required": ["size", "facelets"],
+                        "required": [
+                          "size",
+                          "facelets"
+                        ],
                         "additionalProperties": false
                       },
                       "versions": {
@@ -2833,7 +3546,13 @@
                               ]
                             }
                           },
-                          "required": ["call_index", "sequence", "accepted", "rejected", "failure"],
+                          "required": [
+                            "call_index",
+                            "sequence",
+                            "accepted",
+                            "rejected",
+                            "failure"
+                          ],
                           "additionalProperties": false
                         }
                       },
@@ -2935,6 +3654,11 @@
                             "minLength": 1,
                             "maxLength": 80
                           },
+                          "model_id": {
+                            "default": "unspecified",
+                            "type": "string",
+                            "maxLength": 160
+                          },
                           "claimed_provider": {
                             "default": "unspecified",
                             "type": "string",
@@ -2999,6 +3723,7 @@
                         },
                         "required": [
                           "display_name",
+                          "model_id",
                           "claimed_provider",
                           "claimed_model",
                           "model_snapshot",
@@ -3030,7 +3755,11 @@
                                 "minimum": 0
                               }
                             },
-                            "required": ["input_tokens", "output_tokens", "cost_usd"],
+                            "required": [
+                              "input_tokens",
+                              "output_tokens",
+                              "cost_usd"
+                            ],
                             "additionalProperties": false
                           },
                           {
@@ -3060,6 +3789,7 @@
                       "submitter_identity",
                       "runner_identity",
                       "size",
+                      "difficulty",
                       "seed",
                       "scramble",
                       "initial_state",
@@ -3089,7 +3819,12 @@
                 ]
               }
             },
-            "required": ["ok", "run", "accepted_moves", "result"],
+            "required": [
+              "ok",
+              "run",
+              "accepted_moves",
+              "result"
+            ],
             "additionalProperties": false
           },
           {
@@ -3123,11 +3858,604 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "cubebench_extend_timeout",
+      "description": "Community runs only. Extend the active run timeout when needed, up to a one-hour total timeout. The extension itself consumes a tool call and must be requested before the current timeout expires.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "participant_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "run_token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 256
+          },
+          "additional_time_ms": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 3600000
+          }
+        },
+        "required": [
+          "match_id",
+          "participant_id",
+          "run_id",
+          "run_token",
+          "additional_time_ms"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean",
+                "const": true
+              },
+              "run": {
+                "type": "object",
+                "properties": {
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "match_id": {
+                    "type": "string"
+                  },
+                  "round_id": {
+                    "type": "string"
+                  },
+                  "participant_id": {
+                    "type": "string"
+                  },
+                  "league": {
+                    "type": "string",
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
+                  },
+                  "failure": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "solved",
+                          "unsolved_submission",
+                          "invalid_notation",
+                          "illegal_move_for_cube_size",
+                          "malformed_tool_arguments",
+                          "move_limit_exceeded",
+                          "tool_call_limit_exceeded",
+                          "timeout",
+                          "abandoned",
+                          "disconnected",
+                          "unauthorized",
+                          "internal_server_error"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "state": {
+                    "type": "object",
+                    "properties": {
+                      "size": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 20
+                      },
+                      "facelets": {
+                        "type": "object",
+                        "properties": {
+                          "U": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          },
+                          "R": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          },
+                          "F": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          },
+                          "D": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          },
+                          "L": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          },
+                          "B": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "scramble": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "previous_accepted_moves": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "move_count": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "tool_call_count": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "elapsed_ms": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "remaining": {
+                    "type": "object",
+                    "properties": {
+                      "time_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "moves": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "tool_calls": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "solved": {
+                    "type": "boolean"
+                  },
+                  "versions": {
+                    "type": "object",
+                    "properties": {
+                      "schema": {
+                        "type": "string"
+                      },
+                      "engine": {
+                        "type": "string"
+                      },
+                      "notation": {
+                        "type": "string"
+                      },
+                      "generator": {
+                        "type": "string"
+                      },
+                      "prompt": {
+                        "type": "string"
+                      },
+                      "format": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "face_order": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "string",
+                        "const": "U"
+                      },
+                      {
+                        "type": "string",
+                        "const": "R"
+                      },
+                      {
+                        "type": "string",
+                        "const": "F"
+                      },
+                      {
+                        "type": "string",
+                        "const": "D"
+                      },
+                      {
+                        "type": "string",
+                        "const": "L"
+                      },
+                      {
+                        "type": "string",
+                        "const": "B"
+                      }
+                    ],
+                    "items": {
+                      "not": {}
+                    },
+                    "minItems": 6,
+                    "maxItems": 6
+                  },
+                  "color_scheme": {
+                    "type": "object",
+                    "properties": {
+                      "U": {
+                        "type": "string"
+                      },
+                      "R": {
+                        "type": "string"
+                      },
+                      "F": {
+                        "type": "string"
+                      },
+                      "D": {
+                        "type": "string"
+                      },
+                      "L": {
+                        "type": "string"
+                      },
+                      "B": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "display_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "claimed_provider": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "claimed_model": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "model_snapshot": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 160
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "harness_name": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "harness_version": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "reasoning_effort": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "system_prompt_hash": {
+                        "default": null,
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "mcp_client_identity": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
+                      }
+                    },
+                    "required": [
+                      "display_name",
+                      "model_id",
+                      "claimed_provider",
+                      "claimed_model",
+                      "model_snapshot",
+                      "harness_name",
+                      "harness_version",
+                      "reasoning_effort",
+                      "system_prompt_hash",
+                      "mcp_client_identity"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "verification": {
+                    "type": "string",
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
+                  },
+                  "started_at": {
+                    "type": "string"
+                  },
+                  "finished_at": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "run_id",
+                  "match_id",
+                  "round_id",
+                  "participant_id",
+                  "league",
+                  "size",
+                  "difficulty",
+                  "status",
+                  "failure",
+                  "state",
+                  "scramble",
+                  "previous_accepted_moves",
+                  "move_count",
+                  "tool_call_count",
+                  "elapsed_ms",
+                  "remaining",
+                  "solved",
+                  "versions",
+                  "face_order",
+                  "color_scheme",
+                  "metadata",
+                  "verification",
+                  "started_at",
+                  "finished_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "ok",
+              "run"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "type": "boolean",
+                "const": false
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "solved",
+                      "unsolved_submission",
+                      "invalid_notation",
+                      "illegal_move_for_cube_size",
+                      "malformed_tool_arguments",
+                      "move_limit_exceeded",
+                      "tool_call_limit_exceeded",
+                      "timeout",
+                      "abandoned",
+                      "disconnected",
+                      "unauthorized",
+                      "internal_server_error"
+                    ]
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "category",
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -3167,7 +4495,12 @@
             "maxLength": 256
           }
         },
-        "required": ["match_id", "participant_id", "run_id", "run_token"],
+        "required": [
+          "match_id",
+          "participant_id",
+          "run_id",
+          "run_token"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -3198,16 +4531,31 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "finished"]
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
                   },
                   "failure": {
                     "anyOf": [
@@ -3248,50 +4596,102 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "R": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "F": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "D": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "L": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "B": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           }
                         },
-                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
                         "additionalProperties": false
                       }
                     },
-                    "required": ["size", "facelets"],
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
                     "additionalProperties": false
                   },
                   "scramble": {
@@ -3342,7 +4742,11 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "solved": {
@@ -3370,7 +4774,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
                     "additionalProperties": false
                   },
                   "face_order": {
@@ -3429,7 +4840,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
                     "additionalProperties": false
                   },
                   "metadata": {
@@ -3439,6 +4857,11 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
                       },
                       "claimed_provider": {
                         "default": "unspecified",
@@ -3504,6 +4927,7 @@
                     },
                     "required": [
                       "display_name",
+                      "model_id",
                       "claimed_provider",
                       "claimed_model",
                       "model_snapshot",
@@ -3517,7 +4941,10 @@
                   },
                   "verification": {
                     "type": "string",
-                    "enum": ["verified", "community"]
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
                   },
                   "started_at": {
                     "type": "string"
@@ -3540,6 +4967,7 @@
                   "participant_id",
                   "league",
                   "size",
+                  "difficulty",
                   "status",
                   "failure",
                   "state",
@@ -3561,7 +4989,10 @@
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "run"],
+            "required": [
+              "ok",
+              "run"
+            ],
             "additionalProperties": false
           },
           {
@@ -3595,11 +5026,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -3639,7 +5076,12 @@
             "maxLength": 256
           }
         },
-        "required": ["match_id", "participant_id", "run_id", "run_token"],
+        "required": [
+          "match_id",
+          "participant_id",
+          "run_id",
+          "run_token"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -3670,16 +5112,31 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
+                  },
                   "status": {
                     "type": "string",
-                    "enum": ["active", "finished"]
+                    "enum": [
+                      "active",
+                      "finished"
+                    ]
                   },
                   "failure": {
                     "anyOf": [
@@ -3720,50 +5177,102 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "R": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "F": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "D": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "L": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           },
                           "B": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["U", "R", "F", "D", "L", "B"]
+                              "enum": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ]
                             }
                           }
                         },
-                        "required": ["U", "R", "F", "D", "L", "B"],
+                        "required": [
+                          "U",
+                          "R",
+                          "F",
+                          "D",
+                          "L",
+                          "B"
+                        ],
                         "additionalProperties": false
                       }
                     },
-                    "required": ["size", "facelets"],
+                    "required": [
+                      "size",
+                      "facelets"
+                    ],
                     "additionalProperties": false
                   },
                   "scramble": {
@@ -3814,7 +5323,11 @@
                         "maximum": 9007199254740991
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "solved": {
@@ -3842,7 +5355,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                    "required": [
+                      "schema",
+                      "engine",
+                      "notation",
+                      "generator",
+                      "prompt",
+                      "format"
+                    ],
                     "additionalProperties": false
                   },
                   "face_order": {
@@ -3901,7 +5421,14 @@
                         "type": "string"
                       }
                     },
-                    "required": ["U", "R", "F", "D", "L", "B"],
+                    "required": [
+                      "U",
+                      "R",
+                      "F",
+                      "D",
+                      "L",
+                      "B"
+                    ],
                     "additionalProperties": false
                   },
                   "metadata": {
@@ -3911,6 +5438,11 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 80
+                      },
+                      "model_id": {
+                        "default": "unspecified",
+                        "type": "string",
+                        "maxLength": 160
                       },
                       "claimed_provider": {
                         "default": "unspecified",
@@ -3976,6 +5508,7 @@
                     },
                     "required": [
                       "display_name",
+                      "model_id",
                       "claimed_provider",
                       "claimed_model",
                       "model_snapshot",
@@ -3989,7 +5522,10 @@
                   },
                   "verification": {
                     "type": "string",
-                    "enum": ["verified", "community"]
+                    "enum": [
+                      "verified",
+                      "community"
+                    ]
                   },
                   "started_at": {
                     "type": "string"
@@ -4012,6 +5548,7 @@
                   "participant_id",
                   "league",
                   "size",
+                  "difficulty",
                   "status",
                   "failure",
                   "state",
@@ -4033,7 +5570,10 @@
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "run"],
+            "required": [
+              "ok",
+              "run"
+            ],
             "additionalProperties": false
           },
           {
@@ -4067,11 +5607,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -4096,7 +5642,9 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
-        "required": ["match_id"],
+        "required": [
+          "match_id"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -4118,12 +5666,24 @@
                   },
                   "league": {
                     "type": "string",
-                    "enum": ["sprint", "live"]
+                    "enum": [
+                      "sprint",
+                      "live"
+                    ]
                   },
                   "size": {
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
+                  },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "easy",
+                      "medium",
+                      "hard",
+                      "extra_hard"
+                    ]
                   },
                   "entrant_count": {
                     "type": "integer",
@@ -4143,11 +5703,18 @@
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": ["public", "private"]
+                    "enum": [
+                      "public",
+                      "private"
+                    ]
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["waiting", "active", "completed"]
+                    "enum": [
+                      "waiting",
+                      "active",
+                      "completed"
+                    ]
                   },
                   "created_at": {
                     "type": "string"
@@ -4174,7 +5741,11 @@
                         "maximum": 2000
                       }
                     },
-                    "required": ["time_ms", "moves", "tool_calls"],
+                    "required": [
+                      "time_ms",
+                      "moves",
+                      "tool_calls"
+                    ],
                     "additionalProperties": false
                   },
                   "rounds": {
@@ -4200,7 +5771,12 @@
                           }
                         }
                       },
-                      "required": ["round_id", "index", "revealed", "execution_order"],
+                      "required": [
+                        "round_id",
+                        "index",
+                        "revealed",
+                        "execution_order"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -4216,7 +5792,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["participant_id", "display_name"],
+                      "required": [
+                        "participant_id",
+                        "display_name"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -4239,16 +5818,31 @@
                         },
                         "league": {
                           "type": "string",
-                          "enum": ["sprint", "live"]
+                          "enum": [
+                            "sprint",
+                            "live"
+                          ]
                         },
                         "size": {
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
                         },
+                        "difficulty": {
+                          "type": "string",
+                          "enum": [
+                            "easy",
+                            "medium",
+                            "hard",
+                            "extra_hard"
+                          ]
+                        },
                         "status": {
                           "type": "string",
-                          "enum": ["active", "finished"]
+                          "enum": [
+                            "active",
+                            "finished"
+                          ]
                         },
                         "failure": {
                           "anyOf": [
@@ -4289,50 +5883,102 @@
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 },
                                 "R": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 },
                                 "F": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 },
                                 "D": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 },
                                 "L": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 },
                                 "B": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": ["U", "R", "F", "D", "L", "B"]
+                                    "enum": [
+                                      "U",
+                                      "R",
+                                      "F",
+                                      "D",
+                                      "L",
+                                      "B"
+                                    ]
                                   }
                                 }
                               },
-                              "required": ["U", "R", "F", "D", "L", "B"],
+                              "required": [
+                                "U",
+                                "R",
+                                "F",
+                                "D",
+                                "L",
+                                "B"
+                              ],
                               "additionalProperties": false
                             }
                           },
-                          "required": ["size", "facelets"],
+                          "required": [
+                            "size",
+                            "facelets"
+                          ],
                           "additionalProperties": false
                         },
                         "scramble": {
@@ -4383,7 +6029,11 @@
                               "maximum": 9007199254740991
                             }
                           },
-                          "required": ["time_ms", "moves", "tool_calls"],
+                          "required": [
+                            "time_ms",
+                            "moves",
+                            "tool_calls"
+                          ],
                           "additionalProperties": false
                         },
                         "solved": {
@@ -4477,7 +6127,14 @@
                               "type": "string"
                             }
                           },
-                          "required": ["U", "R", "F", "D", "L", "B"],
+                          "required": [
+                            "U",
+                            "R",
+                            "F",
+                            "D",
+                            "L",
+                            "B"
+                          ],
                           "additionalProperties": false
                         },
                         "metadata": {
@@ -4487,6 +6144,11 @@
                               "type": "string",
                               "minLength": 1,
                               "maxLength": 80
+                            },
+                            "model_id": {
+                              "default": "unspecified",
+                              "type": "string",
+                              "maxLength": 160
                             },
                             "claimed_provider": {
                               "default": "unspecified",
@@ -4552,6 +6214,7 @@
                           },
                           "required": [
                             "display_name",
+                            "model_id",
                             "claimed_provider",
                             "claimed_model",
                             "model_snapshot",
@@ -4565,7 +6228,10 @@
                         },
                         "verification": {
                           "type": "string",
-                          "enum": ["verified", "community"]
+                          "enum": [
+                            "verified",
+                            "community"
+                          ]
                         },
                         "started_at": {
                           "type": "string"
@@ -4588,6 +6254,7 @@
                         "participant_id",
                         "league",
                         "size",
+                        "difficulty",
                         "status",
                         "failure",
                         "state",
@@ -4614,6 +6281,7 @@
                   "match_id",
                   "league",
                   "size",
+                  "difficulty",
                   "entrant_count",
                   "trial_count",
                   "ranked",
@@ -4629,7 +6297,10 @@
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "match"],
+            "required": [
+              "ok",
+              "match"
+            ],
             "additionalProperties": false
           },
           {
@@ -4663,11 +6334,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -4692,7 +6369,9 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
-        "required": ["match_id"],
+        "required": [
+          "match_id"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -4728,15 +6407,25 @@
                     },
                     "league": {
                       "type": "string",
-                      "enum": ["sprint", "live"]
+                      "enum": [
+                        "sprint",
+                        "live"
+                      ]
                     },
                     "classification": {
                       "type": "string",
-                      "enum": ["ranked", "community", "practice"]
+                      "enum": [
+                        "ranked",
+                        "community",
+                        "practice"
+                      ]
                     },
                     "verification": {
                       "type": "string",
-                      "enum": ["verified", "community"]
+                      "enum": [
+                        "verified",
+                        "community"
+                      ]
                     },
                     "submitter_identity": {
                       "type": "string"
@@ -4755,6 +6444,15 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "difficulty": {
+                      "type": "string",
+                      "enum": [
+                        "easy",
+                        "medium",
+                        "hard",
+                        "extra_hard"
+                      ]
                     },
                     "seed": {
                       "type": "string"
@@ -4777,50 +6475,102 @@
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "R": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "F": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "D": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "L": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "B": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             }
                           },
-                          "required": ["U", "R", "F", "D", "L", "B"],
+                          "required": [
+                            "U",
+                            "R",
+                            "F",
+                            "D",
+                            "L",
+                            "B"
+                          ],
                           "additionalProperties": false
                         }
                       },
-                      "required": ["size", "facelets"],
+                      "required": [
+                        "size",
+                        "facelets"
+                      ],
                       "additionalProperties": false
                     },
                     "final_state": {
@@ -4838,50 +6588,102 @@
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "R": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "F": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "D": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "L": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             },
                             "B": {
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": ["U", "R", "F", "D", "L", "B"]
+                                "enum": [
+                                  "U",
+                                  "R",
+                                  "F",
+                                  "D",
+                                  "L",
+                                  "B"
+                                ]
                               }
                             }
                           },
-                          "required": ["U", "R", "F", "D", "L", "B"],
+                          "required": [
+                            "U",
+                            "R",
+                            "F",
+                            "D",
+                            "L",
+                            "B"
+                          ],
                           "additionalProperties": false
                         }
                       },
-                      "required": ["size", "facelets"],
+                      "required": [
+                        "size",
+                        "facelets"
+                      ],
                       "additionalProperties": false
                     },
                     "versions": {
@@ -4906,7 +6708,14 @@
                           "type": "string"
                         }
                       },
-                      "required": ["schema", "engine", "notation", "generator", "prompt", "format"],
+                      "required": [
+                        "schema",
+                        "engine",
+                        "notation",
+                        "generator",
+                        "prompt",
+                        "format"
+                      ],
                       "additionalProperties": false
                     },
                     "attempts": {
@@ -4959,7 +6768,13 @@
                             ]
                           }
                         },
-                        "required": ["call_index", "sequence", "accepted", "rejected", "failure"],
+                        "required": [
+                          "call_index",
+                          "sequence",
+                          "accepted",
+                          "rejected",
+                          "failure"
+                        ],
                         "additionalProperties": false
                       }
                     },
@@ -5061,6 +6876,11 @@
                           "minLength": 1,
                           "maxLength": 80
                         },
+                        "model_id": {
+                          "default": "unspecified",
+                          "type": "string",
+                          "maxLength": 160
+                        },
                         "claimed_provider": {
                           "default": "unspecified",
                           "type": "string",
@@ -5125,6 +6945,7 @@
                       },
                       "required": [
                         "display_name",
+                        "model_id",
                         "claimed_provider",
                         "claimed_model",
                         "model_snapshot",
@@ -5156,7 +6977,11 @@
                               "minimum": 0
                             }
                           },
-                          "required": ["input_tokens", "output_tokens", "cost_usd"],
+                          "required": [
+                            "input_tokens",
+                            "output_tokens",
+                            "cost_usd"
+                          ],
                           "additionalProperties": false
                         },
                         {
@@ -5186,6 +7011,7 @@
                     "submitter_identity",
                     "runner_identity",
                     "size",
+                    "difficulty",
                     "seed",
                     "scramble",
                     "initial_state",
@@ -5218,7 +7044,12 @@
                 "const": "1.0.0"
               }
             },
-            "required": ["ok", "results", "public_key", "export_version"],
+            "required": [
+              "ok",
+              "results",
+              "public_key",
+              "export_version"
+            ],
             "additionalProperties": false
           },
           {
@@ -5252,11 +7083,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]
@@ -5277,11 +7114,17 @@
         "properties": {
           "league": {
             "type": "string",
-            "enum": ["sprint", "live"]
+            "enum": [
+              "sprint",
+              "live"
+            ]
           },
           "result_class": {
             "type": "string",
-            "enum": ["verified", "community"]
+            "enum": [
+              "verified",
+              "community"
+            ]
           },
           "size": {
             "type": "integer",
@@ -5295,7 +7138,12 @@
             "maximum": 100
           }
         },
-        "required": ["league", "result_class", "size", "limit"],
+        "required": [
+          "league",
+          "result_class",
+          "size",
+          "limit"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -5311,11 +7159,17 @@
               },
               "league": {
                 "type": "string",
-                "enum": ["sprint", "live"]
+                "enum": [
+                  "sprint",
+                  "live"
+                ]
               },
               "result_class": {
                 "type": "string",
-                "enum": ["verified", "community"]
+                "enum": [
+                  "verified",
+                  "community"
+                ]
               },
               "size": {
                 "type": "number"
@@ -5326,6 +7180,34 @@
                   "type": "object",
                   "properties": {
                     "competitor": {
+                      "type": "string"
+                    },
+                    "model_id": {
+                      "type": "string"
+                    },
+                    "claimed_provider": {
+                      "type": "string"
+                    },
+                    "claimed_model": {
+                      "type": "string"
+                    },
+                    "model_snapshot": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "harness_name": {
+                      "type": "string"
+                    },
+                    "harness_version": {
+                      "type": "string"
+                    },
+                    "mcp_client_identity": {
                       "type": "string"
                     },
                     "identity_key": {
@@ -5397,6 +7279,13 @@
                   },
                   "required": [
                     "competitor",
+                    "model_id",
+                    "claimed_provider",
+                    "claimed_model",
+                    "model_snapshot",
+                    "harness_name",
+                    "harness_version",
+                    "mcp_client_identity",
                     "identity_key",
                     "attempts",
                     "completed",
@@ -5411,7 +7300,13 @@
                 }
               }
             },
-            "required": ["ok", "league", "result_class", "size", "rows"],
+            "required": [
+              "ok",
+              "league",
+              "result_class",
+              "size",
+              "rows"
+            ],
             "additionalProperties": false
           },
           {
@@ -5445,11 +7340,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["category", "message"],
+                "required": [
+                  "category",
+                  "message"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["ok", "error"],
+            "required": [
+              "ok",
+              "error"
+            ],
             "additionalProperties": false
           }
         ]

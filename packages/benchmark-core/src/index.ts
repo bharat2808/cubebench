@@ -28,6 +28,7 @@ import {
   metadataSchema,
   normalizePublicUrl,
 } from '../../shared-contracts/src/index.js';
+import { DIFFICULTY_SCRAMBLE_LENGTHS } from './types.js';
 import type { Match, Run, Round } from './types.js';
 import { digest, ResultSigner } from './signatures.js';
 export { canonicalJson } from './signatures.js';
@@ -113,6 +114,7 @@ export class BenchmarkService {
             notation:
               "Whitespace-separated face turns U R F D L B, suffix ' or 2; Rw/3Rw wide; 2R inner; 2-3Rw range; x y z rotations; M E S only on odd cubes. See notation 1.0.0. Move count is one per notation token, including rotations.",
             sizes: [2, 3, 4, 5, 6, 7],
+            difficulties: ['easy', 'medium', 'hard', 'extra_hard'],
             maximum_size: 20,
             limits: { time_ms: 300000, moves: 1000, tool_calls: 200 },
             scoring:
@@ -208,13 +210,17 @@ export class BenchmarkService {
       throw new DomainError('malformed_tool_arguments', 'Warmups cannot be ranked.');
     return this.store.transaction(() => {
       const match_id = randomUUID();
+      // Difficulty is the only difficulty signal clients may see. The scramble
+      // length for the level is internal and never returned to a client.
+      const difficulty = input.difficulty ?? 'medium';
+      const scrambleLength = DIFFICULTY_SCRAMBLE_LENGTHS[difficulty];
       const participants = Array.from({ length: input.entrant_count }, (_, i) => ({
         participant_id: randomUUID(),
         display_name: `Entrant ${i + 1}`,
       }));
       const rounds: Round[] = Array.from({ length: input.trial_count }, (_, index) => {
         const seed = randomBytes(32).toString('hex');
-        const generated = generateScramble(input.size, seed);
+        const generated = generateScramble(input.size, seed, scrambleLength);
         const execution_order = participants.map((p) => p.participant_id);
         for (let i = execution_order.length - 1; i > 0; i--) {
           const j = randomInt(i + 1);
@@ -237,6 +243,7 @@ export class BenchmarkService {
       ).toISOString();
       const m: Match = {
         ...input,
+        difficulty,
         match_id,
         owner_id: actor.id,
         created_at,
@@ -293,6 +300,7 @@ export class BenchmarkService {
       return {
         ok: true,
         match_id,
+        difficulty,
         spectator_url:
           input.visibility === 'public' ? `${this.publicUrl}/#match/${match_id}` : null,
         participants: credentials,
@@ -371,6 +379,7 @@ export class BenchmarkService {
         actor,
         league: m.league,
         size: m.size,
+        difficulty: m.difficulty,
         state: structuredClone(round.state),
         initial_state: structuredClone(round.state),
         scramble: round.scramble,
@@ -739,6 +748,7 @@ export class BenchmarkService {
       submitter_identity: run.actor.id,
       runner_identity: run.verification === 'verified' ? run.actor.id : null,
       size: run.size,
+      difficulty: run.difficulty,
       seed: run.seed,
       scramble: run.scramble,
       initial_state: run.initial_state,
@@ -862,6 +872,7 @@ export class BenchmarkService {
       participant_id: run.participant_id,
       league: run.league,
       size: run.size,
+      difficulty: run.difficulty ?? 'medium',
       status: run.status,
       failure: run.failure,
       state: structuredClone(run.state),
@@ -898,6 +909,7 @@ export class BenchmarkService {
       match_id: m.match_id,
       league: m.league,
       size: m.size,
+      difficulty: m.difficulty,
       entrant_count: m.entrant_count,
       trial_count: m.trial_count,
       ranked: m.ranked,
@@ -1046,6 +1058,7 @@ export class BenchmarkService {
       'classification',
       'verification',
       'size',
+      'difficulty',
       'elapsed_ms',
       'move_count',
       'tool_call_count',
@@ -1074,6 +1087,7 @@ export class BenchmarkService {
           r.classification,
           r.verification,
           r.size,
+          r.difficulty,
           r.elapsed_ms,
           r.move_count,
           r.tool_call_count,

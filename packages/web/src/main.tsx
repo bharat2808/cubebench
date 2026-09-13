@@ -375,7 +375,7 @@ function Arena() {
                     : m.participants.map((participant) => participant.display_name).join(' · ')}
                 </strong>
                 <p>
-                  {m.league === 'live' ? 'Live' : 'Sprint'} · {m.size} × {m.size} ·{' '}
+                  {m.league === 'live' ? 'Live' : 'Sprint'} · {m.size} × {m.size} · {m.difficulty} ·{' '}
                   {m.entrant_count} entrants · {m.trial_count} trials
                 </p>
               </div>
@@ -412,6 +412,7 @@ type Solve = {
 };
 function Human() {
   const [size, setSize] = useState(3);
+  const [difficulty, setDifficulty] = useState('medium');
   const [source, setSource] = useState('random');
   const [seed, setSeed] = useState('');
   const [custom, setCustom] = useState('');
@@ -478,7 +479,11 @@ function Human() {
       let nextSeed: string | null = null;
       if (override !== undefined) next = override;
       else if (source === 'custom') next = custom;
-      else {
+      else if (source === 'difficulty') {
+        const lengths: Record<string, number> = { easy: 15, medium: 20, hard: 30, extra_hard: 40 };
+        nextSeed = crypto.randomUUID();
+        next = generateScramble(n, nextSeed, lengths[difficulty]).scramble;
+      } else {
         nextSeed = source === 'seed' ? seed : crypto.randomUUID();
         if (!nextSeed) throw Error('Enter a seed first.');
         next = generateScramble(n, nextSeed).scramble;
@@ -706,11 +711,27 @@ function Human() {
                 onChange={(e) => setSource(e.target.value)}
               >
                 <option value="random">Random</option>
+                <option value="difficulty">Difficulty level</option>
                 <option value="seed">Seeded</option>
                 <option value="custom">Custom sequence</option>
               </select>
             </label>
           </div>
+          {source === 'difficulty' && (
+            <label>
+              Difficulty
+              <select
+                aria-label="Difficulty"
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+                <option value="extra_hard">Extra hard</option>
+              </select>
+            </label>
+          )}
           {source === 'seed' && (
             <label>
               Seed
@@ -832,6 +853,7 @@ function Human() {
 function Create() {
   const [size, setSize] = useState(3);
   const [league, setLeague] = useState('sprint');
+  const [difficulty, setDifficulty] = useState('medium');
   const [entrants, setEntrants] = useState(1);
   const [trials, setTrials] = useState(1);
   const [error, setError] = useState('');
@@ -847,6 +869,7 @@ function Create() {
         await api('/matches', {
           league,
           size,
+          difficulty,
           entrant_count: entrants,
           trial_count: trials,
           ranked: false,
@@ -878,6 +901,19 @@ function Create() {
             </select>
           </label>
           <Size value={size} onChange={setSize} />
+          <label>
+            Difficulty
+            <select
+              aria-label="Difficulty"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+            >
+              <option value="easy">Easy · Gentle warm-up</option>
+              <option value="medium">Medium · Standard challenge</option>
+              <option value="hard">Hard · Long scramble</option>
+              <option value="extra_hard">Extra hard · Maximum depth</option>
+            </select>
+          </label>
           <div className="two-col">
             <label>
               Entrants
@@ -1129,9 +1165,7 @@ function Match({ id }: { id: string }) {
             <a href={'#run/' + r.run_id} className="list-row" key={r.run_id}>
               <div>
                 <strong>{r.metadata.display_name}</strong>
-                <p>
-                  {identityDetails(r.metadata)}
-                </p>
+                <p>{identityDetails(r.metadata)}</p>
                 <p>
                   {r.move_count} moves · {r.tool_call_count} calls ·{' '}
                   <span data-testid={'spectator-time-' + r.run_id} aria-live="off">
@@ -1242,9 +1276,7 @@ function Results({ league }: { league: string }) {
             <a className="list-row" key={r.result_id} href={'#run/' + r.run_id}>
               <div>
                 <strong>{r.metadata.display_name}</strong>
-                <p>
-                  {identityDetails(r.metadata)}
-                </p>
+                <p>{identityDetails(r.metadata)}</p>
                 <p>
                   {r.size} × {r.size} · {r.failure} · {r.move_count} moves · {r.tool_call_count}{' '}
                   calls · {r.verification === 'verified' ? 'Verified identity' : 'Claimed identity'}
@@ -1410,14 +1442,12 @@ function Replay({ id }: { id: string }) {
             </span>
           </div>
         </section>
-      <section className="panel controls">
-        <h2>{run?.metadata.display_name || 'Loading run…'}</h2>
-        <p>
-          {run && identityDetails(run.metadata)}
-        </p>
-        <p>
-          {run?.league} · {run?.verification} · {run?.failure || run?.status}
-        </p>
+        <section className="panel controls">
+          <h2>{run?.metadata.display_name || 'Loading run…'}</h2>
+          <p>{run && identityDetails(run.metadata)}</p>
+          <p>
+            {run?.league} · {run?.verification} · {run?.failure || run?.status}
+          </p>
           <div className="timer">
             {time(run?.elapsed_ms || 0)}
             <span>OFFICIAL WALL CLOCK</span>

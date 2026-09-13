@@ -4,11 +4,17 @@
   "properties": {
     "league": {
       "type": "string",
-      "enum": ["sprint", "live"]
+      "enum": [
+        "sprint",
+        "live"
+      ]
     },
     "result_class": {
       "type": "string",
-      "enum": ["verified", "community"]
+      "enum": [
+        "verified",
+        "community"
+      ]
     },
     "size": {
       "type": "integer",
@@ -22,6 +28,11 @@
       "maximum": 100
     }
   },
-  "required": ["league", "result_class", "size", "limit"],
+  "required": [
+    "league",
+    "result_class",
+    "size",
+    "limit"
+  ],
   "additionalProperties": false
 }

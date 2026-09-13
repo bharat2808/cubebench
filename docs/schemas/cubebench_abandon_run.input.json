@@ -23,6 +23,11 @@
       "maxLength": 256
     }
   },
-  "required": ["match_id", "participant_id", "run_id", "run_token"],
+  "required": [
+    "match_id",
+    "participant_id",
+    "run_id",
+    "run_token"
+  ],
   "additionalProperties": false
 }

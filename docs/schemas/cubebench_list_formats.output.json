@@ -22,7 +22,10 @@
               },
               "league": {
                 "type": "string",
-                "enum": ["sprint", "live"]
+                "enum": [
+                  "sprint",
+                  "live"
+                ]
               },
               "sizes": {
                 "type": "array",
@@ -35,12 +38,21 @@
                 "const": "verified_wall_clock_ms"
               }
             },
-            "required": ["id", "version", "league", "sizes", "metric"],
+            "required": [
+              "id",
+              "version",
+              "league",
+              "sizes",
+              "metric"
+            ],
             "additionalProperties": false
           }
         }
       },
-      "required": ["ok", "formats"],
+      "required": [
+        "ok",
+        "formats"
+      ],
       "additionalProperties": false
     },
     {
@@ -74,11 +86,17 @@
               "type": "string"
             }
           },
-          "required": ["category", "message"],
+          "required": [
+            "category",
+            "message"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["ok", "error"],
+      "required": [
+        "ok",
+        "error"
+      ],
       "additionalProperties": false
     }
   ]

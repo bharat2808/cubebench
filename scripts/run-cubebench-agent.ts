@@ -139,7 +139,9 @@ reset, hint, or custom tools. Do not solve the cube outside the MCP protocol or 
 
 Create one public community ${options.league} match for a ${options.size}x${options.size} cube at
 difficulty ${options.difficulty}, with one entrant and exactly ${MAX_TOOL_CALLS} tool calls in its
-limits. Start the run with truthful
+limits. Before starting the run, show the complete spectator_url returned by match creation to the
+user and open it in a visual browser if one is available. Do not call cubebench_start_run until
+that preview step is handled. Then start the run with truthful
 metadata: display_name, model_id, claimed_provider, claimed_model, model_snapshot, harness_name,
 and harness_version. Then solve the cube using only the state and rules returned by MCP.
 

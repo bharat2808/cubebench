@@ -44,7 +44,11 @@ function setup() {
     >;
   }
   function create(input: Partial<CreateMatchInput> = {}, actor: Actor = community) {
-    return call('cubebench_create_match', { league: 'sprint', size: 3, ...input }, actor);
+    return call(
+      'cubebench_create_match',
+      { league: 'sprint', size: 3, difficulty: 'medium', ...input },
+      actor,
+    );
   }
   function start(
     match: ReturnType<typeof create>,

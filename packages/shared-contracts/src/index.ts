@@ -5,7 +5,7 @@ export const VERSIONS = {
   engine: '1.0.0',
   notation: '1.0.0',
   generator: '1.0.0',
-  prompt: '2.1.0',
+  prompt: '2.2.0',
   format: '2.1.0',
 } as const;
 export function normalizePublicUrl(value = 'http://127.0.0.1:4310', production = false): string {
@@ -271,7 +271,7 @@ export const runArgs = { match_id: id, participant_id: id, run_id: id, run_token
 export const createMatchSchema = z.strictObject({
   league: leagueSchema,
   size: z.number().int().min(2).max(7),
-  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']).optional(),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']).default('medium'),
   entrant_count: z.number().int().min(1).max(8).default(1),
   trial_count: z.number().int().min(1).max(20).default(1),
   ranked: z.boolean().default(false),
@@ -280,6 +280,11 @@ export const createMatchSchema = z.strictObject({
   limits: limitsSchema.default({ time_ms: 300000, moves: 1000, tool_calls: 200 }),
 });
 export type CreateMatchInput = z.input<typeof createMatchSchema>;
+// Browser/API callers retain the historical medium default, while MCP callers
+// must make the benchmark difficulty choice explicit.
+export const createMatchToolSchema = createMatchSchema.extend({
+  difficulty: z.enum(['easy', 'medium', 'hard', 'extra_hard']),
+});
 export const errorSchema = z.strictObject({
   ok: z.literal(false),
   error: z.strictObject({ category: failureSchema, message: z.string() }),
@@ -298,7 +303,7 @@ const formats = z.array(
 export const toolInputs = {
   cubebench_get_rules: z.strictObject({}),
   cubebench_list_formats: z.strictObject({}),
-  cubebench_create_match: createMatchSchema,
+  cubebench_create_match: createMatchToolSchema,
   cubebench_start_run: z.strictObject({
     match_id: id,
     participant_id: id,
@@ -402,7 +407,7 @@ export const descriptions: Record<ToolName, string> = {
   cubebench_list_formats:
     'List versioned benchmark formats. Choose Sprint for one submission or Live for interactive batches.',
   cubebench_create_match:
-    'Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The scramble and its length are internal; the client only chooses the difficulty label. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
+    'Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The difficulty field is required; the scramble and its length are internal. For public matches, show the complete returned spectator_url to the user before starting any run and open it in a visual browser when available. Do not call cubebench_start_run until that preview URL has been shown; private matches return null and may proceed without a preview. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.',
   cubebench_start_run:
     'Redeem the one-use participant token with explicit match, participant and round IDs. Timer starts now. Save run_id and run_token; solve immediately using the league tool.',
   cubebench_submit_solution:

@@ -32,7 +32,11 @@ function setup() {
     >;
   }
   function create(input: Partial<CreateMatchInput> = {}, actor = owner) {
-    return call('cubebench_create_match', { league: 'sprint', size: 2, ...input }, actor);
+    return call(
+      'cubebench_create_match',
+      { league: 'sprint', size: 2, difficulty: 'medium', ...input },
+      actor,
+    );
   }
   function start(match: ReturnType<typeof create>, round = 0, actor = owner) {
     const p = match.participants[0]!,

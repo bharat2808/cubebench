@@ -344,7 +344,7 @@
     },
     {
       "name": "cubebench_create_match",
-      "description": "Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The scramble and its length are internal; the client only chooses the difficulty label. For public matches, open the returned spectator_url before starting runs when a visual preview is available. Private matches return null. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
+      "description": "Create a fresh hidden-scramble match at one of the official difficulty levels: easy, medium, hard or extra_hard. The difficulty field is required; the scramble and its length are internal. For public matches, show the complete returned spectator_url to the user before starting any run and open it in a visual browser when available. Do not call cubebench_start_run until that preview URL has been shown; private matches return null and may proceed without a preview. Ranked requires a trusted runner. Keep returned participant tokens private; distribute one entrant token per round.",
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -436,6 +436,7 @@
         "required": [
           "league",
           "size",
+          "difficulty",
           "entrant_count",
           "trial_count",
           "ranked",

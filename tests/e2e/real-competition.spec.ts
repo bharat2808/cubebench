@@ -31,6 +31,7 @@ for (const league of ['sprint', 'live'] as const) {
       const match = await call('cubebench_create_match', {
         league,
         size: 3,
+        difficulty: 'medium',
         entrant_count: 1,
         trial_count: 1,
         ranked: false,

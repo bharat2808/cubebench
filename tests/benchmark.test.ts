@@ -37,7 +37,12 @@ function enter(
   league: 'sprint' | 'live' = 'sprint',
   entrant_count = 1,
 ) {
-  const match = ok(s, 'cubebench_create_match', { league, size: 3, entrant_count });
+  const match = ok(s, 'cubebench_create_match', {
+    league,
+    size: 3,
+    difficulty: 'medium',
+    entrant_count,
+  });
   const p = match.participants[0]!,
     t = p.tokens[0]!;
   const start = ok(s, 'cubebench_start_run', {
@@ -118,7 +123,7 @@ describe('benchmark acceptance', () => {
       errorSchema.parse(
         s.service.execute(
           'cubebench_create_match',
-          { league: 'sprint', size: 3, ranked: true },
+          { league: 'sprint', size: 3, difficulty: 'medium', ranked: true },
           actor,
         ),
       ).error.category,
@@ -171,6 +176,7 @@ describe('benchmark acceptance', () => {
     const match = ok(s, 'cubebench_create_match', {
       league: 'live',
       size: 3,
+      difficulty: 'medium',
       limits: { time_ms: 1000, moves: 1000, tool_calls: 200 },
     });
     const participant = match.participants[0]!;

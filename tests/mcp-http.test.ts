@@ -81,19 +81,56 @@ describe('authenticated MCP HTTP', () => {
       ).toBe(true);
       const prompt = await client.getPrompt({ name: 'cubebench_compete' });
       expect(prompt.messages).toHaveLength(1);
-      expect(prompt.description).toBe('CubeBench competition prompt v2.1.0');
+      expect(prompt.description).toBe('CubeBench competition prompt v2.2.0');
       const promptText = prompt.messages[0]?.content;
       expect(promptText?.type).toBe('text');
       if (promptText?.type !== 'text') throw new Error('Expected text competition prompt');
       expect(promptText.text).toContain('spectator_url');
+      expect(promptText.text).toContain(
+        'show the complete URL to the user before starting any run',
+      );
+      expect(promptText.text).toContain(
+        'Do not call cubebench_start_run until the user has been shown that preview URL',
+      );
       expect(promptText.text.indexOf('spectator_url')).toBeLessThan(
         promptText.text.indexOf('cubebench_start_run'),
       );
       const rules = await client.callTool({ name: 'cubebench_get_rules', arguments: {} });
       const parsedRules = toolSuccessOutputs.cubebench_get_rules.parse(rules.structuredContent);
       expect(parsedRules.versions.schema).toBe('2.1.0');
-      expect(parsedRules.versions.prompt).toBe('2.1.0');
+      expect(parsedRules.versions.prompt).toBe('2.2.0');
     });
+
+  it('requires an explicit difficulty for MCP match creation', async () => {
+    const { url, store } = await setup();
+    const { token } = issueAccessToken(store, 'difficulty fixture');
+    const client = new Client({ name: 'difficulty-fixture', version: '1' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(url + '/mcp'), {
+        requestInit: { headers: { Authorization: `Bearer ${token}` } },
+      }),
+    );
+    cleanup.push(() => client.close());
+
+    const omitted = await client.callTool({
+      name: 'cubebench_create_match',
+      arguments: { league: 'live', size: 3 },
+    });
+    expect(omitted.isError).toBe(true);
+    expect(omitted.structuredContent).toMatchObject({
+      ok: false,
+      error: { category: 'malformed_tool_arguments' },
+    });
+
+    const explicit = await client.callTool({
+      name: 'cubebench_create_match',
+      arguments: { league: 'live', size: 3, difficulty: 'extra_hard' },
+    });
+    expect(explicit.isError).not.toBe(true);
+    expect(
+      toolSuccessOutputs.cubebench_create_match.parse(explicit.structuredContent).difficulty,
+    ).toBe('extra_hard');
+  });
 
   it('returns a canonical spectator URL while the created match is still waiting', async () => {
     const publicUrl = 'https://cubebench.example.test';
@@ -109,7 +146,7 @@ describe('authenticated MCP HTTP', () => {
 
     const response = await client.callTool({
       name: 'cubebench_create_match',
-      arguments: { league: 'live', size: 3 },
+      arguments: { league: 'live', size: 3, difficulty: 'medium' },
     });
     const match = toolSuccessOutputs.cubebench_create_match.parse(response.structuredContent);
 
@@ -120,7 +157,7 @@ describe('authenticated MCP HTTP', () => {
 
     const privateResponse = await client.callTool({
       name: 'cubebench_create_match',
-      arguments: { league: 'live', size: 3, visibility: 'private' },
+      arguments: { league: 'live', size: 3, difficulty: 'medium', visibility: 'private' },
     });
     const privateMatch = toolSuccessOutputs.cubebench_create_match.parse(
       privateResponse.structuredContent,
@@ -167,7 +204,7 @@ async function compete(client: Client, store: SqliteRepository, league: 'sprint'
       (typeof toolSuccessOutputs)[N]
     >;
   };
-  const match = await call('cubebench_create_match', { league, size: 3 });
+  const match = await call('cubebench_create_match', { league, size: 3, difficulty: 'medium' });
   if (!('participants' in match)) throw Error('No participants');
   const p = match.participants[0]!;
   const t = p.tokens[0]!;
@@ -345,7 +382,7 @@ describe('OAuth and durable browser transport', () => {
       const response = await fetch(url + '/internal/tools/cubebench_create_match', {
         method: 'POST',
         headers: { Authorization: `Bearer ${await sign(sub)}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ league: 'sprint', size: 3, ranked: true }),
+        body: JSON.stringify({ league: 'sprint', size: 3, difficulty: 'medium', ranked: true }),
       });
       expect((await response.json()).ok).toBe(sub === 'trusted');
     }
@@ -355,7 +392,7 @@ describe('OAuth and durable browser transport', () => {
         Authorization: `Bearer ${await sign('trusted', undefined, '5m', 'cubebench:compete')}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ league: 'sprint', size: 3, ranked: true }),
+      body: JSON.stringify({ league: 'sprint', size: 3, difficulty: 'medium', ranked: true }),
     });
     expect((await weak.json()).ok).toBe(false);
     expect(

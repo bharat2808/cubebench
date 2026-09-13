@@ -89,6 +89,7 @@
   "required": [
     "league",
     "size",
+    "difficulty",
     "entrant_count",
     "trial_count",
     "ranked",

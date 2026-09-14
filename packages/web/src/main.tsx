@@ -201,7 +201,7 @@ function App() {
           <div className="header-tools">
             <a
               className="header-link"
-              href="https://github.com/bharat2808/rubiks-cube-bench"
+              href="https://github.com/bharat2808/cubebench"
               target="_blank"
               rel="noreferrer"
             >
@@ -238,7 +238,7 @@ function App() {
             CubeBench <span className="muted">/</span> A clearer measure of reasoning.
           </span>
           <span>
-            <a href="https://github.com/bharat2808/rubiks-cube-bench" target="_blank" rel="noreferrer">
+            <a href="https://github.com/bharat2808/cubebench" target="_blank" rel="noreferrer">
               GitHub ↗
             </a>{' '}
             <span className="muted">·</span> ENGINE v1.0 · 2–7 LAYERS
